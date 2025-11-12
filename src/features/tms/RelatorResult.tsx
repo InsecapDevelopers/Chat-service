@@ -33,12 +33,15 @@ const linkifyText = (text: string): React.ReactNode => {
 
 export const RelatorResult = ({ content, onRelatorSelect }: RelatorResultProps) => {
   // Detectar si la respuesta contiene listado de múltiples coincidencias
-  const isMultipleResults = content.includes("Encontré varias coincidencias") || 
-                           content.includes("Relatores encontrados") ||
-                           content.includes("Se encontraron") ||
-                           content.includes("relatores") ||
-                           content.includes("múltiples") ||
-                           /\d+\s+relatores/.test(content);
+  // Priorizar patrones explícitos de listado múltiple
+  const isMultipleResults = (
+    /Se encontraron? \d+ relatores?/i.test(content) ||
+    content.includes("Encontré varias coincidencias") || 
+    content.includes("Relatores encontrados:") ||
+    (content.includes("múltiples coincidencias") && content.toLowerCase().includes("relator")) ||
+    // Detectar lista con guiones: líneas que contienen "Nombre — RUT"
+    (content.split('\n').filter(line => /—\s*\d{1,2}\.\d{3}\.\d{3}/.test(line)).length >= 2)
+  );
   
 
   
@@ -122,15 +125,27 @@ const RelatorList = ({ content, onRelatorSelect }: { content: string; onRelatorS
 
   const relatores = parseRelatorsFromContent(content);
 
-
-
   if (relatores.length === 0) {
     return <div className="text-sm text-gray-600 whitespace-pre-wrap">{content}</div>;
   }
 
+  // Extraer el encabezado (texto antes de la primera línea con relator)
+  const lines = content.split('\n');
+  const firstRelatorIndex = lines.findIndex(line => /—\s*\d{1,2}\.\d{3}\.\d{3}/.test(line));
+  const headerText = firstRelatorIndex > 0 
+    ? lines.slice(0, firstRelatorIndex).join('\n').trim()
+    : "Relatores encontrados (haz clic para buscar):";
+
   return (
-    <div className="mt-3 space-y-1">
-      <p className="text-sm font-medium text-gray-700 mb-2">Relatores encontrados (haz clic para buscar):</p>
+    <div className="space-y-3">
+      {/* Mostrar encabezado del backend */}
+      {headerText && (
+        <div className="text-sm text-gray-700 whitespace-pre-wrap">
+          {headerText}
+        </div>
+      )}
+      
+      {/* Lista de relatores clickeables */}
       <div className="space-y-1">
         {relatores.map((relator, index) => (
           <div
@@ -149,7 +164,6 @@ const RelatorList = ({ content, onRelatorSelect }: { content: string; onRelatorS
                 {relator.rut}
               </Badge>
             </div>
-
           </div>
         ))}
       </div>

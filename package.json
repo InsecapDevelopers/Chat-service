@@ -7,8 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
-    "build:bundle": "vite build --config vite.bundle.config.ts",
-    "build:bundle-standalone": "vite build --config vite.bundle.config.ts --mode production",
+    "build:bundle": "vite build --config vite.bundle.config.ts && node scripts/postbuild-css.js",
+    "build:bundle-standalone": "vite build --config vite.bundle.config.ts --mode production && node scripts/postbuild-css.js",
+    "postbuild:css": "node scripts/postbuild-css.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },

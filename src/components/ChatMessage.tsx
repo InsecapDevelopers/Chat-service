@@ -64,6 +64,7 @@ export const ChatMessage = ({ message, onRelatorSelect, onParticipanteSelect }: 
   const isRelatorContent = !isUser && (
     message.text.includes("Relator encontrado") ||
     message.text.includes("Relatores encontrados") ||
+    /Se encontraron? \d+ relatores?/i.test(message.text) ||
     (message.text.includes("múltiples coincidencias") && message.text.toLowerCase().includes("relator")) ||
     (message.text.includes("Encontré varias coincidencias") && message.text.toLowerCase().includes("relator"))
   );

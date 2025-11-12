@@ -105,24 +105,6 @@ export const AdditionalTmsActions = ({
         actionsRegistry.register(materialAction);
       }
 
-      // Registrar material para comercial
-      if (currentRole === "tms:comercial") {
-        const materialAction = {
-          id: "material-curso",
-          component: (
-            <MaterialQuickAction
-              onActionSend={onActionSend}
-              disabled={disabled}
-              currentRole={currentRole}
-            />
-          ),
-          roles: ["tms:comercial"],
-          order: 2
-        };
-
-        actionsRegistry.register(materialAction);
-      }
-
       // Registrar material para diseño&desarrollo
       if (currentRole === "tms:diseno&desarrollo") {
         const materialAction = {
