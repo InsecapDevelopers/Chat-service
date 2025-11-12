@@ -1,0 +1,109 @@
+/* =====================================================
+   CAPIN CHAT WIDGET - CSS ISOLATION FOR TMS
+   Solo aplica reset cuando está embebido (no en desarrollo)
+   ===================================================== */
+
+/* Root container - Solo propiedades de posicionamiento críticas */
+#capin-chat-root,
+#chat-bubble-container {
+  /* Posicionamiento fijo para burbuja flotante */
+  position: fixed !important;
+  z-index: 999999 !important;
+  
+  /* Prevenir herencia de font del sistema padre */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  
+  /* Box model básico */
+  box-sizing: border-box !important;
+}
+
+/* Asegurar box-sizing para todos los elementos hijos */
+#capin-chat-root *,
+#chat-bubble-container * {
+  box-sizing: border-box !important;
+}
+
+/* Prevenir que Bootstrap/TMS sobrescriba clases comunes */
+#capin-chat-root .btn,
+#capin-chat-root .form-control,
+#capin-chat-root .modal,
+#capin-chat-root .container,
+#chat-bubble-container .btn,
+#chat-bubble-container .form-control {
+  all: revert !important;
+}
+
+/* Override específico para inputs (prevenir estilos Bootstrap) */
+#capin-chat-root input,
+#chat-bubble-container input {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+/* Override específico para botones (prevenir estilos Bootstrap) */
+#capin-chat-root button,
+#chat-bubble-container button {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+#capin-chat-root input,
+#chat-bubble-container input,
+.capin-chat-widget input {
+  display: block !important;
+}
+
+#capin-chat-root span,
+#chat-bubble-container span,
+.capin-chat-widget span {
+  display: inline !important;
+}
+
+/* Asegurar que los modales se rendericen correctamente */
+[data-radix-portal],
+[data-radix-dialog-overlay],
+[data-radix-dialog-content] {
+  z-index: 1000000 !important;
+  position: fixed !important;
+}
+
+/* Override específico para modales de Radix UI */
+[data-radix-dialog-overlay] {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1000000 !important;
+}
+
+[data-radix-dialog-content] {
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 1000001 !important;
+  max-height: 85vh !important;
+  width: 90vw !important;
+  max-width: 450px !important;
+}
+
+/* Prevenir que el TMS interfiera con las transiciones */
+#capin-chat-root *,
+#chat-bubble-container * {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Asegurar que los portales se rendericen correctamente */
+body > [data-radix-portal] {
+  position: fixed !important;
+  z-index: 1000000 !important;
+  inset: 0 !important;
+}
+
+/* Fix para tooltips y popovers */
+[data-radix-tooltip-content],
+[data-radix-popover-content] {
+  z-index: 1000002 !important;
+}
