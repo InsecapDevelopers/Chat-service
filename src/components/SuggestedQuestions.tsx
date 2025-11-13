@@ -26,6 +26,7 @@ type Props = {
   isMobile?: boolean;
   disabled?: boolean;
   onDiplomaRequest?: (rut: string) => void;
+  onMaterialRequest?: (codigoCurso: string) => void;
   onClienteIntentRequest?: (intent: string, label: string) => void;
   onRelatorIntentRequest?: (intent: string, label: string) => void;
 };
@@ -101,6 +102,7 @@ export const SuggestedQuestions = ({
   isMobile = false, 
   disabled = false, 
   onDiplomaRequest,
+  onMaterialRequest,
   onClienteIntentRequest,
   onRelatorIntentRequest
 }: Props) => {
@@ -142,8 +144,9 @@ export const SuggestedQuestions = ({
   };
 
   const handleMaterialConfirm = (codigoCurso: string) => {
-    const message = `Necesito el material del curso ${codigoCurso}`;
-    onAsk(message, message);
+    if (onMaterialRequest) {
+      onMaterialRequest(codigoCurso);
+    }
   };
 
   const handleDiplomaConfirm = (rut: string) => {

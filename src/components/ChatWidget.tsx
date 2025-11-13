@@ -41,6 +41,8 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
 }) => {
   // Empezar cerrado para mostrar el botón
   const [open, setOpen] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [isWelcomeFading, setIsWelcomeFading] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
 
   // Log de montaje
@@ -58,6 +60,24 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
       }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Ocultar mensaje de bienvenida después de 3 segundos con animación
+  useEffect(() => {
+    // Iniciar fade out a los 2.5 segundos
+    const fadeTimer = setTimeout(() => {
+      setIsWelcomeFading(true);
+    }, 2500);
+
+    // Ocultar completamente a los 3 segundos (después del fade)
+    const hideTimer = setTimeout(() => {
+      setShowWelcome(false);
+    }, 3000);
+
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(hideTimer);
+    };
   }, []);
 
   // Notificar al host del Shadow DOM sobre cambios de estado
@@ -117,38 +137,46 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
             <MessageCircle className="h-7 w-7 md:h-8 md:w-8 text-white" />
           </button>
 
-          <div className="absolute -top-3 right-0 translate-y-[-100%]">
-            {/* Globo completo solo en lg+ */}
-            <div className="hidden lg:block bg-white border border-border rounded-xl shadow-lg p-3 w-[72vw] max-w-[420px] min-w-[260px]">
-              <div className="flex items-center gap-3">
-                <img
-                  src={capinMascot}
-                  alt="Capin"
-                  className="w-8 h-8 rounded-full shrink-0"
-                />
-                <p className="text-sm sm:text-base leading-5 sm:leading-6 text-foreground">
-                  Hola, soy <span className="font-semibold">CapinIA</span>, tu
-                  asistente virtual. <br /> ¿En qué puedo ayudarte hoy?
-                </p>
+          {showWelcome && (
+            <div 
+              className={`absolute -top-3 right-0 translate-y-[-100%] transition-all duration-500 ${
+                isWelcomeFading 
+                  ? 'opacity-0 scale-95 translate-y-[-110%]' 
+                  : 'opacity-100 scale-100 animate-in fade-in slide-in-from-bottom-2'
+              }`}
+            >
+              {/* Globo completo solo en lg+ */}
+              <div className="hidden lg:block bg-white border border-border rounded-xl shadow-lg p-3 w-[72vw] max-w-[420px] min-w-[260px]">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={capinMascot}
+                    alt="Capin"
+                    className="w-8 h-8 rounded-full shrink-0"
+                  />
+                  <p className="text-sm sm:text-base leading-5 sm:leading-6 text-foreground">
+                    Hola, soy <span className="font-semibold">CapinIA</span>, tu
+                    asistente virtual. <br /> ¿En qué puedo ayudarte hoy?
+                  </p>
+                </div>
+                <div className="absolute -bottom-2 right-8 h-4 w-4 rotate-45 bg-white border-r border-b border-border" />
               </div>
-              <div className="absolute -bottom-2 right-8 h-4 w-4 rotate-45 bg-white border-r border-b border-border" />
-            </div>
 
-            {/* Globo reducido para md y menores */}
-            <div className="block lg:hidden bg-white border border-border rounded-xl shadow-lg px-2 py-1 min-w-[160px]">
-              <div className="flex items-center gap-2">
-                <img
-                  src={capinMascot}
-                  alt="Capin"
-                  className="w-6 h-6 rounded-full shrink-0"
-                />
-                <p className="text-xs leading-4 text-foreground">
-                  ¿En qué puedo ayudarte?
-                </p>
+              {/* Globo reducido para md y menores */}
+              <div className="block lg:hidden bg-white border border-border rounded-xl shadow-lg px-2 py-1 min-w-[160px]">
+                <div className="flex items-center gap-2">
+                  <img
+                    src={capinMascot}
+                    alt="Capin"
+                    className="w-6 h-6 rounded-full shrink-0"
+                  />
+                  <p className="text-xs leading-4 text-foreground">
+                    ¿En qué puedo ayudarte?
+                  </p>
+                </div>
+                <div className="absolute -bottom-2 right-4 h-3 w-3 rotate-45 bg-white border-r border-b border-border" />
               </div>
-              <div className="absolute -bottom-2 right-4 h-3 w-3 rotate-45 bg-white border-r border-b border-border" />
             </div>
-          </div>
+          )}
         </div>
       </div>
     );

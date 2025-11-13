@@ -151,6 +151,7 @@ const RelatorList = ({ content, onRelatorSelect }: { content: string; onRelatorS
           <div
             key={index}
             onClick={() => onRelatorSelect(relator.rut)}
+            onPointerUp={() => onRelatorSelect(relator.rut)}
             className="flex items-center gap-2 p-2 rounded-md border border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-all duration-200 group"
           >
             <span className="text-sm font-medium text-gray-500 min-w-[20px]">

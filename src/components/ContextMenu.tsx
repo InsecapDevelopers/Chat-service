@@ -178,6 +178,7 @@ export const ContextMenu = ({
                     type="button"
                     key={contextType.type}
                     onClick={() => handleSelectType(contextType.type)}
+                    onPointerUp={() => handleSelectType(contextType.type)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-accent transition-colors text-left"
                   >
                     <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary">

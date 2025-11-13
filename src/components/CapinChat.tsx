@@ -717,6 +717,22 @@ export const CapinChat = ({
   };
 
   const handleTmsConfirm = async (codigoCurso: string, tipo: TmsActionType) => {
+    // Para R11, usar el patrón de payload estructurado con target
+    if (tipo === 'R11') {
+      const payload = {
+        source: "quick_action",
+        intent: "tms.get_r11",
+        message: "Necesito información del R11 del curso",
+        target: {
+          codigoCurso: codigoCurso
+        }
+      };
+      
+      await handleAdditionalActionSend(payload);
+      return;
+    }
+    
+    // Para otros tipos (R12, R24, etc.), mantener comportamiento existente
     // MANTENER EXACTO: Generar prompt usando función existente
     const explicitPrompt = generateTmsPrompt(codigoCurso, tipo);
     
@@ -748,7 +764,7 @@ export const CapinChat = ({
     source: string;
     intent: string;
     message: string;
-    target?: { rut?: string; nombre?: string; codigoComer?: string; codigoCotizacion?: string; pkCotizacion?: string };
+    target?: { rut?: string; nombre?: string; codigoComer?: string; codigoCotizacion?: string; pkCotizacion?: string; codigoCurso?: string };
   }) => {
     try {
       // Tracking para modo guided
@@ -781,6 +797,14 @@ export const CapinChat = ({
       } else if (payload.intent === "tms.get_costos") {
         if (payload.target?.codigoComer) {
           displayMessage = `Consultar costos para: ${payload.target.codigoComer}`;
+        }
+      } else if (payload.intent === "tms.get_r11") {
+        if (payload.target?.codigoCurso) {
+          displayMessage = `Consultar R11 del curso: ${payload.target.codigoCurso}`;
+        }
+      } else if (payload.intent === "tms.get_recursos_curso") {
+        if (payload.target?.codigoComer) {
+          displayMessage = `Consultar material del curso: ${payload.target.codigoComer}`;
         }
       }
 
@@ -1360,6 +1384,20 @@ export const CapinChat = ({
     await handleAdditionalActionSend(payload);
   };
 
+  // Handler para consulta de Material (Recurso de aprendizaje)
+  const handleMaterialRequest = async (codigoCurso: string) => {
+    // Crear payload para consulta de recursos del curso
+    const payload = {
+      source: "quick_action",
+      intent: "tms.get_recursos_curso",
+      message: `Necesito el material del curso ${codigoCurso}`,
+      target: { codigoComer: codigoCurso }
+    };
+    
+    // Enviar búsqueda automática usando handleAdditionalActionSend
+    await handleAdditionalActionSend(payload);
+  };
+
   // ADD: Atajo de teclado Ctrl+K para R11
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1785,6 +1823,7 @@ export const CapinChat = ({
           isMobile={isMobile} 
           disabled={isTyping || isResettingSession}
           onDiplomaRequest={selectedRole === "cliente" ? handleDiplomaRequest : undefined}
+          onMaterialRequest={selectedRole === "relator" ? handleMaterialRequest : undefined}
           onClienteIntentRequest={selectedRole === "cliente" ? handleClienteIntentRequest : undefined}
           onRelatorIntentRequest={selectedRole === "relator" ? handleRelatorIntentRequest : undefined}
         />

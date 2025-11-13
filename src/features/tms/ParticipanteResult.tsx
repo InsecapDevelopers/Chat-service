@@ -302,6 +302,7 @@ const ParticipanteList = ({ content, onParticipanteSelect }: { content: string; 
           <div
             key={participante.num}
             onClick={() => onParticipanteSelect(participante.rut)}
+            onPointerUp={() => onParticipanteSelect(participante.rut)}
             className="flex flex-col gap-2 p-3 rounded-lg border border-gray-200 hover:border-cyan-300 hover:bg-cyan-50 cursor-pointer transition-all duration-200 group"
           >
             <div className="flex items-start gap-2">
