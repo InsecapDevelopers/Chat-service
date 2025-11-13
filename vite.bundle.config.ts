@@ -16,13 +16,9 @@ export default defineConfig({
       formats: ['umd', 'es']
     },
     rollupOptions: {
-      // Opcional: excluir React si ya está disponible en TMS
-      external: ['react', 'react-dom'],
+      // NO excluir React - incluirlo en el bundle para standalone
+      // external: ['react', 'react-dom'],
       output: {
-        globals: {
-          'react': 'React',
-          'react-dom': 'ReactDOM'
-        },
         // Configuración para UMD
         exports: 'named'
       }

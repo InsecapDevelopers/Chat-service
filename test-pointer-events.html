@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Pointer Events - Chat Bubble</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    
+    .test-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+    
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background: #dc2626;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+    
+    .status {
+      background: #f3f4f6;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    
+    .status-item {
+      margin: 5px 0;
+      padding: 8px;
+      background: white;
+      border-radius: 4px;
+      border-left: 3px solid #667eea;
+    }
+    
+    .status-success {
+      border-left-color: #10b981;
+      background: #d1fae5;
+    }
+    
+    .status-error {
+      border-left-color: #ef4444;
+      background: #fee2e2;
+    }
+    
+    .info-box {
+      background: #fef3c7;
+      border: 2px solid #f59e0b;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    
+    .info-box h3 {
+      margin: 0 0 10px 0;
+      color: #92400e;
+    }
+    
+    .info-box ul {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    
+    .info-box li {
+      margin: 5px 0;
+      color: #78350f;
+    }
+    
+    #host-inspector {
+      margin-top: 20px;
+      padding: 15px;
+      background: #e0e7ff;
+      border-radius: 8px;
+      border: 2px solid #667eea;
+    }
+    
+    #host-inspector h3 {
+      margin: 0 0 10px 0;
+      color: #3730a3;
+    }
+    
+    #host-inspector code {
+      display: block;
+      background: white;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 5px 0;
+      font-size: 12px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h1>🧪 Test: Pointer Events del Chat Bubble</h1>
+    
+    <div class="info-box">
+      <h3>⚠️ Objetivo del Test</h3>
+      <p>Verificar que el chat bubble es completamente clickeable con la configuración:</p>
+      <ul>
+        <li><strong>Host element</strong>: position: fixed, z-index: 9999, pointer-events: auto</li>
+        <li><strong>Shadow DOM</strong>: mode: 'open' con CSS inyectado</li>
+        <li><strong>Portales Radix</strong>: Renderizando dentro del shadowRoot</li>
+      </ul>
+      <p><strong>Resultado esperado:</strong> El botón flotante debe responder al click y abrir el chat.</p>
+    </div>
+    
+    <div class="controls">
+      <button class="btn-primary" onclick="montarChat()">
+        🚀 Montar Chat
+      </button>
+      <button class="btn-danger" onclick="desmontarChat()">
+        🗑️ Desmontar Chat
+      </button>
+      <button class="btn-primary" onclick="inspeccionarHost()">
+        🔍 Inspeccionar Host Element
+      </button>
+    </div>
+    
+    <div class="status" id="status">
+      <div class="status-item">
+        ℹ️ Esperando acción... Haz click en "Montar Chat"
+      </div>
+    </div>
+    
+    <div id="host-inspector" style="display: none;">
+      <h3>🔍 Inspección del Host Element</h3>
+      <div id="inspector-content"></div>
+    </div>
+  </div>
+
+  <!-- Cargar el bundle del chat -->
+  <script src="dist/bundle/capin-chat-bubble.umd.js"></script>
+
+  <script>
+    // Esperar a que el bundle se cargue completamente
+    window.addEventListener('load', function() {
+      if (!window.CapinChat || typeof window.CapinChat.renderChatBubble !== 'function') {
+        log('❌ ERROR: window.CapinChat.renderChatBubble no está disponible después de cargar', true);
+        log('⚠️ Verifica que dist/bundle/capin-chat-bubble.umd.js existe y se carga correctamente', true);
+      } else {
+        log('✅ API encontrada y lista: window.CapinChat.renderChatBubble');
+      }
+    });
+    
+    let chatMontado = false;
+    
+    function log(message, isError = false) {
+      const status = document.getElementById('status');
+      const className = isError ? 'status-item status-error' : 'status-item status-success';
+      status.innerHTML += `<div class="${className}">${new Date().toLocaleTimeString()} - ${message}</div>`;
+      status.scrollTop = status.scrollHeight;
+    }
+    
+    function montarChat() {
+      if (chatMontado) {
+        log('⚠️ El chat ya está montado. Desmóntalo primero.', true);
+        return;
+      }
+      
+      log('🚀 Iniciando montaje del chat...');
+      
+      // Datos de prueba (similar a TMS)
+      const userData = {
+        id: '123456789',
+        name: 'Usuario Test',
+        email: 'test@example.com',
+        rut: '12.345.678-9',
+        role: 'alumno',
+        session_id: 'test-session-' + Date.now(),
+        idCliente: 'CLI001',
+        clientesAsociados: [
+          { idCliente: 'CLI001', nombre: 'Cliente Test 1' },
+          { idCliente: 'CLI002', nombre: 'Cliente Test 2' }
+        ]
+      };
+      
+      // Verificar que la API existe
+      if (!window.CapinChat || typeof window.CapinChat.renderChatBubble !== 'function') {
+        log('❌ ERROR: window.CapinChat.renderChatBubble no está disponible', true);
+        return;
+      }
+      
+      log('✅ API encontrada: window.CapinChat.renderChatBubble');
+      
+      // Montar con z-index alto (simulando TMS)
+      window.CapinChat.renderChatBubble(userData, 'capin-chat-root', {
+        zIndex: 9999,
+        debug: true,
+        radixPortalContainer: 'shadow'
+      })
+      .then(result => {
+        log('✅ Chat montado exitosamente');
+        log(`✅ Shadow Root: ${result.shadowRoot ? 'Creado' : 'No disponible'}`);
+        log(`✅ Host Element ID: ${result.host.id}`);
+        chatMontado = true;
+        
+        // Inspeccionar automáticamente después de montar
+        setTimeout(() => inspeccionarHost(), 500);
+      })
+      .catch(error => {
+        log(`❌ ERROR al montar: ${error.message}`, true);
+        console.error('Error completo:', error);
+      });
+    }
+    
+    function desmontarChat() {
+      if (!chatMontado) {
+        log('⚠️ No hay chat montado', true);
+        return;
+      }
+      
+      log('🗑️ Desmontando chat...');
+      
+      if (window.CapinChat && typeof window.CapinChat.unmountChatBubble === 'function') {
+        window.CapinChat.unmountChatBubble('capin-chat-root');
+        log('✅ Chat desmontado exitosamente');
+        chatMontado = false;
+        
+        // Ocultar inspector
+        document.getElementById('host-inspector').style.display = 'none';
+      } else {
+        log('❌ ERROR: window.CapinChat.unmountChatBubble no disponible', true);
+      }
+    }
+    
+    function inspeccionarHost() {
+      const host = document.getElementById('capin-chat-root');
+      const inspector = document.getElementById('host-inspector');
+      const content = document.getElementById('inspector-content');
+      
+      if (!host) {
+        log('⚠️ No se encontró el host element. Monta el chat primero.', true);
+        return;
+      }
+      
+      log('🔍 Inspeccionando host element...');
+      inspector.style.display = 'block';
+      
+      const computedStyle = window.getComputedStyle(host);
+      
+      content.innerHTML = `
+        <code><strong>Element ID:</strong> ${host.id}</code>
+        <code><strong>Position:</strong> ${computedStyle.position}</code>
+        <code><strong>Z-Index:</strong> ${computedStyle.zIndex}</code>
+        <code><strong>Pointer Events:</strong> ${computedStyle.pointerEvents}</code>
+        <code><strong>Display:</strong> ${computedStyle.display}</code>
+        <code><strong>Right:</strong> ${computedStyle.right}</code>
+        <code><strong>Bottom:</strong> ${computedStyle.bottom}</code>
+        <code><strong>Width:</strong> ${computedStyle.width}</code>
+        <code><strong>Height:</strong> ${computedStyle.height}</code>
+        <code><strong>Shadow Root:</strong> ${host.shadowRoot ? 'Attached (mode: ' + host.shadowRoot.mode + ')' : 'No attached'}</code>
+        <code><strong>Children in Shadow:</strong> ${host.shadowRoot ? host.shadowRoot.children.length : 'N/A'}</code>
+      `;
+      
+      log('✅ Inspección completada. Ver detalles arriba.');
+      
+      // Verificar si pointer-events está bloqueando
+      if (computedStyle.pointerEvents === 'none') {
+        log('⚠️ PROBLEMA DETECTADO: pointer-events: none está bloqueando clicks', true);
+        log('💡 Solución: El host debe tener pointer-events: auto', false);
+      } else {
+        log('✅ pointer-events configurado correctamente: ' + computedStyle.pointerEvents);
+      }
+    }
+    
+    // Log inicial
+    log('📦 Bundle cargado correctamente');
+    log('🎯 Listo para probar. Haz click en "Montar Chat"');
+  </script>
+</body>
+</html>

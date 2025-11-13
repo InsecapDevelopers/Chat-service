@@ -2,12 +2,42 @@ const fs = require('fs');
 const path = require('path');
 const postcss = require('postcss');
 
-const cssFilePath = path.resolve(__dirname, '../Content/js/Chat/style.css');
+const cssFilePath = path.resolve(__dirname, '../dist/bundle/style.css');
 
-console.log('🔧 [PostBuild CSS] Iniciando transformación...');
+console.log('🔧 [PostBuild CSS] Iniciando transformación de estilos del chat...');
 
+// PRIMERO: Copiar el CSS ORIGINAL y LIMPIAR los prefijos #capin-chat-root  
+const shadowStylesPath = path.resolve(__dirname, '../src/assets/shadow-styles.css');
+let originalCSS = fs.readFileSync(cssFilePath, 'utf8'); // CSS de Vite
+
+console.log('📝 [PostBuild CSS] Limpiando TODOS los prefijos del CSS...');
+
+// Eliminar TODOS los prefijos #capin-chat-root (PostCSS)
+originalCSS = originalCSS.replace(/#capin-chat-root\s+/g, '');
+originalCSS = originalCSS.replace(/#capin-chat-root,/g, '');
+originalCSS = originalCSS.replace(/#capin-chat-root\s*{/g, '{');
+originalCSS = originalCSS.replace(/#capin-chat-root\./g, '.');
+originalCSS = originalCSS.replace(/#capin-chat-root#/g, '#');
+originalCSS = originalCSS.replace(/#capin-chat-root\*/g, '*');
+
+// Eliminar TODOS los prefijos #chat-bubble-container (hardcoded en source)
+originalCSS = originalCSS.replace(/#chat-bubble-container\s+/g, '');
+originalCSS = originalCSS.replace(/#chat-bubble-container,/g, '');
+originalCSS = originalCSS.replace(/#chat-bubble-container\s*{/g, '{');
+originalCSS = originalCSS.replace(/#chat-bubble-container\./g, '.');
+originalCSS = originalCSS.replace(/#chat-bubble-container#/g, '#');
+originalCSS = originalCSS.replace(/#chat-bubble-container\*/g, '*');
+
+console.log('📝 [PostBuild CSS] Guardando CSS limpio (sin prefijos) para Shadow DOM...');
+// Replace :root with :host for Shadow DOM CSS variables
+originalCSS = originalCSS.replace(/:root\{/g, ':host{');
+fs.writeFileSync(shadowStylesPath, originalCSS);
+console.log('✅ [PostBuild CSS] shadow-styles.css creado con CSS limpio (prefijos + :root → :host)');
+
+// SEGUNDO: Leer el archivo CSS para transformarlo (agregar MÁS prefijos para standalone)
 const css = fs.readFileSync(cssFilePath, 'utf8');
 
+// Plugin personalizado para prefijar TODO
 const prefixAllPlugin = postcss.plugin('prefix-all-selectors', () => {
   return (root) => {
     root.walkRules((rule) => {
@@ -133,19 +163,22 @@ const prefixAllPlugin = postcss.plugin('prefix-all-selectors', () => {
   };
 });
 
+// Procesar el CSS
 postcss([prefixAllPlugin()])
   .process(css, { from: cssFilePath, to: cssFilePath })
   .then((result) => {
+    // Escribir el CSS CON PREFIJOS al bundle dist (para uso standalone)
     fs.writeFileSync(cssFilePath, result.css);
-    console.log('✅ [PostBuild CSS] Transformación completada');
+    
+    console.log('✅ [PostBuild CSS] Transformación completada exitosamente');
     console.log(`📝 Archivo procesado: ${cssFilePath}`);
     console.log('📊 Cambios aplicados:');
     console.log('   - Selectores prefijados con #capin-chat-root');
     console.log('   - @keyframes renombradas con prefijo capin-');
     console.log('   - Pseudo-elementos globales aislados');
-    console.log('   - Selectores Radix UI mantenidos globales');
   })
   .catch((error) => {
-    console.error('❌ [PostBuild CSS] Error:', error);
+    console.error('❌ [PostBuild CSS] Error al procesar CSS:', error);
     process.exit(1);
   });
+

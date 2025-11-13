@@ -18,6 +18,9 @@ export interface TMSRoleMapping {
   displayLabel: string;
 }
 
+// Set para rastrear roles desconocidos y evitar spam
+const warnedRoles = new Set<string>();
+
 /**
  * Mapea un rol de TMS BD a su equivalente en el chat
  */
@@ -75,8 +78,10 @@ export function mapTmsRoleToCapin(tmsRole: string | undefined | null): TMSRoleMa
         displayLabel: 'Cliente'
       };
 
-    // PARTICIPANTE -> alumno
+    // PARTICIPANTE / ALUMNO -> alumno
     case 'participante':
+    case 'alumno':
+    case 'estudiante':
       return {
         tmsRole: 'Participante',
         capinRole: 'alumno',
@@ -190,7 +195,10 @@ export function mapTmsRoleToCapin(tmsRole: string | undefined | null): TMSRoleMa
 
     // FALLBACK - Rol desconocido = público
     default:
-      console.warn(`[TMS Role Mapper] Rol desconocido: "${tmsRole}", asignando público`);
+      if (!warnedRoles.has(normalized)) {
+        console.warn(`[TMS Role Mapper] Rol desconocido: "${tmsRole}", asignando público`);
+        warnedRoles.add(normalized);
+      }
       return {
         tmsRole: tmsRole,
         capinRole: 'publico',

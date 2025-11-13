@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Bundle - CapinIA Chat</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    h1 { color: #333; margin-bottom: 20px; }
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      background: #667eea;
+      color: white;
+      font-weight: 600;
+      margin: 10px 5px;
+    }
+    button:hover { background: #5568d3; }
+    .log {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 20px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .log-item { padding: 5px 0; border-bottom: 1px solid #e0e0e0; }
+    .success { color: #22c55e; }
+    .error { color: #ef4444; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Test Bundle CapinIA Chat</h1>
+    <p>Esta página carga el bundle compilado desde <code>dist/bundle/</code></p>
+    
+    <button onclick="montarChat()">🚀 Montar Chat</button>
+    <button onclick="inspeccionar()">🔍 Inspeccionar</button>
+    
+    <div class="log" id="log">
+      <div class="log-item">ℹ️ Esperando...</div>
+    </div>
+  </div>
+
+  <!-- CARGAR BUNDLE DESDE DIST -->
+  <script src="/dist/bundle/capin-chat-bubble.umd.js"></script>
+  
+  <script>
+    function log(msg, isError = false) {
+      const logEl = document.getElementById('log');
+      const className = isError ? 'log-item error' : 'log-item success';
+      logEl.innerHTML += `<div class="${className}">${new Date().toLocaleTimeString()} - ${msg}</div>`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function montarChat() {
+      log('🚀 Iniciando...');
+      
+      const userData = {
+        id: '123456789',
+        name: 'Usuario Test',
+        email: 'test@example.com',
+        rut: '12.345.678-9',
+        role: 'alumno',
+        session_id: 'test-' + Date.now(),
+        idCliente: 'CLI001',
+        clientesAsociados: [
+          { idCliente: 'CLI001', nombre: 'Cliente 1' },
+          { idCliente: 'CLI002', nombre: 'Cliente 2' }
+        ]
+      };
+
+      if (!window.CapinChat) {
+        log('❌ window.CapinChat NO disponible', true);
+        return;
+      }
+
+      window.CapinChat.renderChatBubble(userData, 'capin-chat-root', {
+        zIndex: 9999,
+        debug: true
+      }).then(() => {
+        log('✅ Chat montado correctamente');
+        setTimeout(inspeccionar, 1000);
+      }).catch(err => {
+        log('❌ Error: ' + err.message, true);
+      });
+    }
+
+    function inspeccionar() {
+      const host = document.getElementById('capin-chat-root');
+      if (!host || !host.shadowRoot) {
+        log('❌ No hay Shadow DOM', true);
+        return;
+      }
+
+      const styles = host.shadowRoot.querySelector('style');
+      if (styles) {
+        const cssText = styles.textContent;
+        const preview = cssText.substring(0, 500);
+        log('📝 CSS Preview: ' + preview);
+        log('📊 CSS Length: ' + cssText.length + ' chars');
+        
+        const tienePrefijos = cssText.includes('#capin-chat-root');
+        log(tienePrefijos ? '❌ Aún tiene prefijos #capin-chat-root' : '✅ Prefijos removidos correctamente');
+        
+        const tieneGradient = cssText.includes('bg-gradient-primary') || cssText.includes('gradient-primary');
+        log(tieneGradient ? '✅ Tiene clases de gradiente' : '❌ No tiene clases de gradiente');
+      } else {
+        log('❌ No hay estilos en Shadow DOM', true);
+      }
+
+      const mount = host.shadowRoot.querySelector('#capin-chat-mount');
+      if (mount) {
+        log('✅ Mount point encontrado');
+        log('📏 Dimensiones: ' + mount.offsetWidth + 'x' + mount.offsetHeight);
+      }
+    }
+
+    log('✅ Página cargada');
+    log('📦 Bundle: ' + (window.CapinChat ? 'Cargado' : 'NO CARGADO'));
+  </script>
+</body>
+</html>

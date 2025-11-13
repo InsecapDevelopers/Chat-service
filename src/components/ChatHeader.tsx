@@ -86,7 +86,7 @@ export const ChatHeader = ({
   ];
 
   return (
-    <div className="bg-gradient-primary text-white p-3 rounded-t-xl shadow-chat">
+    <div className="bg-gradient-primary text-white p-3 rounded-t-xl shadow-chat min-h-[56px]">
       <div className="flex items-start justify-between gap-2">
         {/* IZQUIERDA */}
         <div className="flex items-start gap-2 min-w-0">

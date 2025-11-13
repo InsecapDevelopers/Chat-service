@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { MessageCircle } from 'lucide-react';
-import { createPortal } from 'react-dom';
 import { CapinChat } from './CapinChat';
 import { ContactProvider } from '@/contexts/ContactContext';
 import { AuthContext, SafeUser } from '@/contexts/AuthContext';
@@ -260,19 +259,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
     </>
   );
 
-  return (
-    <>
-      {/* Contenedor invisible para mantener id="capin-chat-root" */}
-      <div 
-        className={`capin-chat-widget ${className}`}
-        id="capin-chat-root"
-        style={{ display: 'none' }}
-      />
-      
-      {/* Portal que renderiza el chat directamente en document.body */}
-      {createPortal(chatBubbleContent, document.body)}
-    </>
-  );
+  return chatBubbleContent;
 };
 
 export default ChatBubble;

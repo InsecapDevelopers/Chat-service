@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
+import { useShadowRoot } from "@/contexts/ShadowRootContext";
 
 export interface ContactFormData {
   nombre: string;
@@ -26,6 +27,8 @@ export const ContactModal = ({
   onCancel,
   isLoading = false,
 }: ContactModalProps) => {
+  const { shadowRoot } = useShadowRoot();
+  
   const [formData, setFormData] = useState<ContactFormData>({
     nombre: "",
     empresa: null,
@@ -412,6 +415,7 @@ export const ContactModal = ({
     </div>
   );
 
-  // Renderizar en portal global
-  return createPortal(modalContent, document.body);
+  // Renderizar en Shadow DOM si está disponible, sino en document.body
+  const portalTarget = (shadowRoot as unknown as Element) || document.body;
+  return createPortal(modalContent, portalTarget);
 };

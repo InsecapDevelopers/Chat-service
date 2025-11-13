@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { ChatBubble, UserData } from '../components/ChatBubble';
+import { ShadowRootProvider } from '../contexts/ShadowRootContext';
 
 /**
  * Tipos para los datos del usuario de TMS
@@ -17,19 +18,176 @@ export type TMSUserData = {
 };
 
 /**
- * Carga la hoja de estilos del chat si no está presente
+ * Opciones de configuración para el chat embebido
  */
-const ensureStylesLoaded = () => {
-  if (!document.querySelector('link[data-capin-style]')) {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/Content/js/Chat/style.css';
-    link.setAttribute('data-capin-style', '1');
-    link.onerror = () => {
-      console.warn('[Chat][asset_404] No se pudo cargar /Content/js/Chat/style.css');
-    };
-    document.head.appendChild(link);
+export interface ChatEmbedOptions {
+  zIndex?: number;                 // default 1085
+  theme?: 'light' | 'dark' | string;
+  radixPortalContainer?: 'shadow';
+  basePath?: string;
+  debug?: boolean;
+}
+
+/**
+ * Tipos auxiliares para almacenar referencias en el host
+ */
+interface HostWithCapinData extends HTMLElement {
+  __capinRoot?: ReactRoot;
+  __capinShadowRoot?: ShadowRoot;
+}
+
+type ReactRoot = ReturnType<typeof ReactDOM.createRoot>;
+
+/**
+ * Obtiene el CSS compilado del bundle para inyectarlo en el Shadow DOM
+ * En producción, esto se reemplazará con el CSS real del build
+ */
+// IMPORTANTE: Este CSS se incluirá en el bundle durante build
+// El archivo src/assets/shadow-styles.css se genera desde dist/bundle/style.css DESPUÉS de PostCSS
+import shadowCSS from '../assets/shadow-styles.css?inline';
+
+const getShadowCSS = (): string => {
+  // Retornar CSS inline desde el bundle (ya transformado por PostCSS)
+  if (shadowCSS && shadowCSS.length > 1000) {
+    console.log('[Chat] ✅ CSS inline del bundle cargado:', shadowCSS.length, 'bytes');
+    return shadowCSS;
   }
+  
+  // Fallback: retornar string vacío (el CSS se cargará del archivo)
+  console.warn('[Chat] CSS inline no disponible, se cargará desde archivo');
+  return '';
+};
+
+/**
+ * Carga la hoja de estilos del chat en el Shadow DOM
+ */
+const injectShadowStyles = async (shadowRoot: ShadowRoot): Promise<void> => {
+  const styleTag = document.createElement('style');
+  styleTag.setAttribute('data-chat-styles', 'true');
+  
+  // Intentar obtener CSS inline del bundle
+  let css = getShadowCSS();
+  
+  // Si no hay CSS inline, cargar del archivo
+  if (!css) {
+    // Intentar múltiples rutas (TMS vs standalone)
+    const cssUrls = [
+      'dist/bundle/style.css',            // Ruta local para test (PRIMERO)
+      '/Content/js/Chat/style.css',       // Ruta de TMS (backup)
+      './style.css'                       // Ruta relativa al bundle
+    ];
+    
+    for (const url of cssUrls) {
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          css = await response.text();
+          console.log(`[Chat] ✅ CSS cargado exitosamente desde: ${url}`);
+          break;
+        }
+      } catch (e) {
+        console.log(`[Chat] ⚠️ No se pudo cargar desde: ${url}`);
+        // Continuar con siguiente URL
+      }
+    }
+    
+    if (!css) {
+      console.warn('[Chat] No se pudo cargar style.css desde ninguna ruta, usando estilos mínimos');
+      css = ':host { all: initial; }'; // Reset mínimo
+    }
+  }
+  
+  // DEBUG: Mostrar primeras líneas del CSS cargado
+  if (css) {
+    const preview = css.substring(0, 500);
+    console.log('[Chat] 📝 CSS Preview (primeros 500 chars):', preview);
+    console.log('[Chat] 📊 CSS Total length:', css.length, 'bytes');
+    
+    // Verificar si tiene selectores #capin-chat-root
+    const hasRootSelector = css.includes('#capin-chat-root');
+    console.log('[Chat] 🔍 Contiene #capin-chat-root:', hasRootSelector);
+    
+    // Verificar si tiene clases de componentes
+    const hasComponents = css.includes('.capin-chat') || css.includes('.bg-') || css.includes('.text-');
+    console.log('[Chat] 🔍 Contiene clases de componentes:', hasComponents);
+  }
+  
+  // VALIDACIÓN CRÍTICA: Verificar que CSS contiene estilos
+  if (!css || css.length < 100) {
+    console.error('[Chat] ⚠️ CSS inválido o muy corto, forzando estilos base');
+    css = `
+      #capin-chat-root { 
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #1a1a1a;
+      }
+      #capin-chat-root * { box-sizing: border-box; }
+    `;
+  }
+
+  // TRANSFORMAR: REMOVER COMPLETAMENTE el prefijo #capin-chat-root
+  // Shadow DOM provee aislamiento natural, no necesitamos prefijos
+  // #capin-chat-root .clase → .clase (directo)
+  let transformedCSS = css;
+  
+  // Remover TODOS los prefijos #capin-chat-root
+  transformedCSS = transformedCSS.replace(/#capin-chat-root\s+/g, '');
+  transformedCSS = transformedCSS.replace(/#capin-chat-root,/g, '');
+  transformedCSS = transformedCSS.replace(/#capin-chat-root\s*{/g, '{');
+  transformedCSS = transformedCSS.replace(/#capin-chat-root::/g, '::');
+  transformedCSS = transformedCSS.replace(/#capin-chat-root\./g, '.');
+  transformedCSS = transformedCSS.replace(/#capin-chat-root#/g, '#');
+  
+  console.log('[Chat] 🔄 CSS transformado: Prefijos #capin-chat-root REMOVIDOS');
+  console.log('[Chat] 📝 Muestra transformada (primeros 500 chars):', transformedCSS.substring(0, 500));
+  
+  // Agregar estilos al Shadow DOM
+  styleTag.textContent = transformedCSS;
+  shadowRoot.appendChild(styleTag);
+  console.log('[Chat] ✅ CSS inline del bundle cargado:', transformedCSS.length, 'bytes');
+
+  // Constructable Stylesheet (opcional)
+  try {
+    const sheet = new CSSStyleSheet();
+    await sheet.replace(transformedCSS);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (shadowRoot as any).adoptedStyleSheets = [ ...((shadowRoot as any).adoptedStyleSheets || []), sheet ];
+    console.log('[Chat] ✅ adoptedStyleSheets aplicado');
+  } catch {
+    // ignore si no se soporta
+    console.log('[Chat] ℹ️ adoptedStyleSheets no soportado en este navegador');
+  }
+  
+  // VERIFICACIÓN POST-INYECCIÓN
+  setTimeout(() => {
+    const injectedStyle = shadowRoot.querySelector('style[data-chat-styles]');
+    if (!injectedStyle || !injectedStyle.textContent) {
+      console.error('[Chat] ❌ CRÍTICO: Estilos NO se inyectaron correctamente');
+      // Reintentar inyección
+      const backupStyle = document.createElement('style');
+      backupStyle.textContent = transformedCSS;
+      backupStyle.setAttribute('data-chat-styles-backup', 'true');
+      shadowRoot.appendChild(backupStyle);
+      console.log('[Chat] 🔄 Estilos reinyectados como backup');
+    } else {
+      console.log('[Chat] ✅ CSS aplicado correctamente en Shadow DOM');
+      
+      // Diagnóstico de variables y clase utilitaria
+      const host = shadowRoot.host as HTMLElement;
+      const varVal = getComputedStyle(host).getPropertyValue('--gradient-primary');
+      console.log('[Chat] 🔎 --gradient-primary en :host =', varVal || '(vacía)');
+      
+      const probe = document.createElement('div');
+      probe.className = 'bg-gradient-primary';
+      probe.style.width = '1px';
+      probe.style.height = '1px';
+      shadowRoot.appendChild(probe);
+      const bg = getComputedStyle(probe).getPropertyValue('background-image');
+      console.log('[Chat] 🔎 background-image de .bg-gradient-primary =', bg || '(none)');
+      shadowRoot.removeChild(probe);
+    }
+  }, 100);
 };
 
 /**
@@ -91,32 +249,84 @@ export const autoBootOnce = (userData: TMSUserData) => {
 };
 
 /**
- * Función principal para renderizar el chat bubble desde TMS
- * Versión simplificada SIN Shadow DOM
+ * Función principal para renderizar el chat bubble con Shadow DOM
  * 
- * Uso: window.CapinChat.renderChatBubble(userData, 'capin-chat-root');
+ * Uso: window.CapinChat.renderChatBubble(userData, 'capin-chat-root', options);
  */
-export const renderChatBubble = (userData?: TMSUserData, containerId = 'capin-chat-root') => {
+export const renderChatBubble = async (
+  userData?: TMSUserData, 
+  containerId = 'capin-chat-root',
+  options: ChatEmbedOptions = {}
+) => {
   try {
-    console.log('[Chat] Iniciando carga desde Partial View...');
+    // FORZAR que los logs se vean
+    console.clear();
+    console.log('%c[Chat] 🚀 INICIANDO CARGA CON SHADOW DOM', 'background: #2563eb; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+    console.log('[Chat] Iniciando carga con Shadow DOM...');
 
-    // 1. Cargar estilos
-    ensureStylesLoaded();
+    const { zIndex = 1085, debug = false } = options;
 
-    // 2. Obtener o crear contenedor
-    let host = document.getElementById(containerId);
+    // 1. Obtener o crear contenedor host
+    let host = document.getElementById(containerId) as HostWithCapinData | null;
     if (!host) {
-      console.log(`[Chat] Creando contenedor ${containerId}`);
-      host = document.createElement('div');
-      host.id = containerId;
-      document.body.appendChild(host);
+      if (debug) console.log(`[Chat] Creando contenedor ${containerId}`);
+      const newHost = document.createElement('div');
+      newHost.id = containerId;
+      document.body.appendChild(newHost);
+      host = newHost as HostWithCapinData;
     }
 
-    // 3. Normalizar datos
-    const label = (userData && (userData.email || userData.name)) || 'Usuario';
-    document.title = `Chat de: ${label}`;
+    // IMPORTANTE: Aplicar z-index y posicionamiento al HOST
+    // El shadow DOM heredará estas propiedades
+    host.style.cssText = `
+      position: fixed !important;
+      right: 20px !important;
+      bottom: 20px !important;
+      z-index: ${zIndex} !important;
+      pointer-events: none !important;
+    `;
 
-    // 4. Deduplicar clientes asociados si existen
+    // 2. Idempotencia: si ya existe un root, desmontarlo
+    if (host.__capinRoot) {
+      try {
+        if (debug) console.log('[Chat] Desmontando instancia anterior');
+        host.__capinRoot.unmount();
+      } catch (e) {
+        console.warn('[Chat] Error desmontando instancia anterior:', e);
+      }
+    }
+
+    // 3. Crear o reutilizar Shadow DOM
+    const shadowRoot = host.shadowRoot ?? host.attachShadow({ mode: 'open' });
+    
+    // Limpiar contenido anterior del shadow
+    shadowRoot.innerHTML = '';
+
+    // 4. Inyectar estilos primero
+    if (debug) console.log('[Chat] Inyectando estilos en Shadow DOM...');
+    await injectShadowStyles(shadowRoot);
+
+    // 5. Crear punto de montaje para React DIRECTAMENTE (sin wrapper)
+    const mountPoint = document.createElement('div');
+    mountPoint.id = 'capin-chat-mount';
+    // pointer-events: none permite que clics pasen excepto en elementos hijos con pointer-events: auto
+    mountPoint.style.cssText = `
+      position: fixed !important;
+      inset: 0 !important;
+      pointer-events: none !important;
+    `;
+    shadowRoot.appendChild(mountPoint);
+
+    // VALIDACIÓN: Verificar que la estructura está completa
+    if (!shadowRoot.querySelector('#capin-chat-mount')) {
+      throw new Error('[Chat] CRÍTICO: #capin-chat-mount no se creó');
+    }
+    if (debug) console.log('[Chat] ✅ Estructura Shadow DOM validada correctamente');
+
+    // 6. Normalizar datos del usuario
+    const label = (userData && (userData.email || userData.name)) || 'Usuario';
+    
+    // 7. Deduplicar clientes asociados
     let clientesDeduplicados = userData?.clientesAsociados;
     if (clientesDeduplicados && clientesDeduplicados.length > 0) {
       const clientesUnicos = new Map<string, { idCliente: string; nombre: string }>();
@@ -128,7 +338,7 @@ export const renderChatBubble = (userData?: TMSUserData, containerId = 'capin-ch
       clientesDeduplicados = Array.from(clientesUnicos.values());
     }
 
-    // 5. Convertir userData de TMS a formato interno
+    // 8. Convertir userData de TMS a formato interno
     const chatBubbleProps: UserData = {
       userId: userData?.id,
       userName: userData?.name,
@@ -141,35 +351,169 @@ export const renderChatBubble = (userData?: TMSUserData, containerId = 'capin-ch
       clientesAsociados: clientesDeduplicados,
     };
 
-    console.log('[Chat] ========== DATOS RECIBIDOS DESDE TMS ==========');
-    console.log('[Chat] Usuario ID:', userData?.id);
-    console.log('[Chat] Nombre:', userData?.name);
-    console.log('[Chat] Email:', userData?.email);
-    console.log('[Chat] RUT:', userData?.rut);
-    console.log('[Chat] Rol Original (TMS):', userData?.role);
-    console.log('[Chat] Session ID:', userData?.session_id);
-    console.log('[Chat] ID Cliente:', userData?.idCliente);
-    console.log('[Chat] Clientes Asociados (deduplicados):', clientesDeduplicados);
-    if (clientesDeduplicados && clientesDeduplicados.length > 0) {
-      console.log('[Chat] Total de clientes asociados:', clientesDeduplicados.length);
-      clientesDeduplicados.forEach((cliente, index) => {
-        console.log(`[Chat]   Cliente ${index + 1}: ${cliente.nombre} (ID: ${cliente.idCliente})`);
-      });
+    if (debug) {
+      console.log('[Chat] ========== DATOS RECIBIDOS DESDE TMS ==========');
+      console.log('[Chat] Usuario ID:', userData?.id);
+      console.log('[Chat] Nombre:', userData?.name);
+      console.log('[Chat] Email:', userData?.email);
+      console.log('[Chat] RUT:', userData?.rut);
+      console.log('[Chat] Rol Original (TMS):', userData?.role);
+      console.log('[Chat] Session ID:', userData?.session_id);
+      console.log('[Chat] ID Cliente:', userData?.idCliente);
+      console.log('[Chat] Clientes Asociados:', clientesDeduplicados?.length || 0);
+      console.log('[Chat] ===================================================');
     }
-    console.log('[Chat] ===================================================');
 
-    // 5. Montar el componente React
-    const root = ReactDOM.createRoot(host);
-    root.render(React.createElement(ChatBubble, chatBubbleProps));
+    // 9. Montar React en el Shadow DOM con contexto
+    const root = ReactDOM.createRoot(mountPoint);
+    root.render(
+      React.createElement(
+        ShadowRootProvider,
+        { shadowRoot, zIndex, children: React.createElement(ChatBubble, chatBubbleProps) }
+      )
+    );
     
-    console.log('[Chat] ✓ Chat montado correctamente');
+    // VALIDACIÓN POST-RENDER: Verificar que React montó correctamente
+    setTimeout(() => {
+      const shadowStyle = shadowRoot.querySelector('style[data-chat-styles]');
+      const reactMount = shadowRoot.querySelector('#capin-chat-mount');
+      
+      if (!shadowStyle) {
+        console.error('[Chat] ❌ CRÍTICO: Estilos NO encontrados en Shadow DOM');
+      } else {
+        console.log('[Chat] ✅ Estilos encontrados:', shadowStyle.textContent.length, 'chars');
+      }
+      
+      if (!reactMount || !reactMount.hasChildNodes()) {
+        console.error('[Chat] ❌ CRÍTICO: React NO se montó correctamente');
+      } else {
+        console.log('[Chat] ✅ React montado con', reactMount.children.length, 'elementos hijos');
+        
+        // Inspeccionar primer elemento renderizado
+        const firstChild = reactMount.firstElementChild;
+        if (firstChild) {
+          const childComputed = window.getComputedStyle(firstChild);
+          console.log('[Chat] 🎨 Estilos del primer hijo React:');
+          console.log('  - className:', firstChild.className);
+          console.log('  - display:', childComputed.display);
+          console.log('  - width:', childComputed.width);
+          console.log('  - height:', childComputed.height);
+          console.log('  - visibility:', childComputed.visibility);
+          console.log('  - opacity:', childComputed.opacity);
+          console.log('  - position:', childComputed.position);
+          console.log('  - z-index:', childComputed.zIndex);
+          
+          // Buscar el botón del chat específicamente
+          const chatButton = firstChild.querySelector('button');
+          if (chatButton) {
+            const buttonComputed = window.getComputedStyle(chatButton);
+            console.log('[Chat] 🔘 Botón encontrado:');
+            console.log('  - display:', buttonComputed.display);
+            console.log('  - visibility:', buttonComputed.visibility);
+            console.log('  - opacity:', buttonComputed.opacity);
+            console.log('  - width:', buttonComputed.width);
+            console.log('  - height:', buttonComputed.height);
+            console.log('  - position:', buttonComputed.position);
+            console.log('  - pointerEvents:', buttonComputed.pointerEvents);
+          } else {
+            console.warn('[Chat] ⚠️ No se encontró el botón del chat');
+          }
+          
+          // NUEVO: Inspeccionar elementos internos críticos
+          const chatWidget = firstChild.querySelector('.capin-chat-widget');
+          if (chatWidget) {
+            const widgetComputed = window.getComputedStyle(chatWidget);
+            console.log('[Chat] 🔍 Widget .capin-chat-widget encontrado:', {
+              display: widgetComputed.display,
+              width: widgetComputed.width,
+              height: widgetComputed.height,
+              backgroundColor: widgetComputed.backgroundColor,
+              visibility: widgetComputed.visibility,
+              opacity: widgetComputed.opacity
+            });
+          } else {
+            console.log('[Chat] ℹ️ Widget .capin-chat-widget no encontrado (normal si el chat está cerrado)');
+          }
+          
+          // EXPONER ELEMENTO PARA INSPECCIÓN EN CONSOLA
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (window as any).__CAPIN_CHAT_DEBUG__ = {
+            shadowRoot,
+            firstChild,
+            host: shadowRoot.host,
+            reactMount,
+            inspect: () => {
+              console.log('=== SHADOW DOM STRUCTURE ===');
+              console.log('Host:', shadowRoot.host);
+              console.log('React Mount:', reactMount);
+              console.log('First Child:', firstChild);
+              console.log('First Child HTML:', firstChild?.outerHTML?.substring(0, 500));
+            }
+          };
+          console.log('[Chat] 🔧 Debug disponible: window.__CAPIN_CHAT_DEBUG__.inspect()');
+        }
+      }
+      
+      if (shadowStyle && reactMount?.hasChildNodes()) {
+        console.log('[Chat] ✅ Validación completa: Estilos + Estructura + React OK');
+      }
+    }, 500);
+    
+    // Guardar referencia para cleanup
+    host.__capinRoot = root;
+    host.__capinShadowRoot = shadowRoot;
+    
+    console.log('[Chat] ✓ Chat montado en Shadow DOM correctamente');
 
-    // 6. Enviar primer mensaje automático
+    // 10. Enviar primer mensaje automático
     if (userData) {
       autoBootOnce(userData);
     }
+
+    // 11. Retornar API de control
+    return {
+      unmount: () => {
+        if (debug) console.log('[Chat] Desmontando chat...');
+        root.unmount();
+        shadowRoot.innerHTML = '';
+        delete host.__capinRoot;
+        delete host.__capinShadowRoot;
+      },
+      shadowRoot,
+      host,
+    };
   } catch (e) {
     console.error('[Chat][Fatal]', e);
+    throw e;
+  }
+};
+
+/**
+ * Función para desmontar el chat bubble
+ * 
+ * Uso: window.CapinChat.unmountChatBubble('capin-chat-root');
+ */
+export const unmountChatBubble = (containerId = 'capin-chat-root') => {
+  const host = document.getElementById(containerId) as HostWithCapinData | null;
+  if (!host) {
+    console.warn(`[Chat] No se encontró contenedor ${containerId}`);
+    return;
+  }
+
+  try {
+    if (host.__capinRoot) {
+      host.__capinRoot.unmount();
+      delete host.__capinRoot;
+    }
+
+    if (host.__capinShadowRoot) {
+      host.__capinShadowRoot.innerHTML = '';
+      delete host.__capinShadowRoot;
+    }
+
+    console.log('[Chat] ✓ Chat desmontado correctamente');
+  } catch (e) {
+    console.error('[Chat] Error al desmontar:', e);
   }
 };
 
@@ -198,6 +542,9 @@ export const setupGlobalAPI = () => {
   if (typeof window !== 'undefined') {
     interface CapinChatAPI {
       renderChatBubble?: typeof renderChatBubble;
+      mount?: typeof renderChatBubble; // Alias intuitivo
+      unmountChatBubble?: typeof unmountChatBubble;
+      unmount?: typeof unmountChatBubble; // Alias intuitivo
       autoBootOnce?: typeof autoBootOnce;
     }
     const globalWindow = window as Window & { CapinChat?: CapinChatAPI };
@@ -207,9 +554,12 @@ export const setupGlobalAPI = () => {
       globalWindow.CapinChat = {};
     }
     globalWindow.CapinChat.renderChatBubble = renderChatBubble;
+    globalWindow.CapinChat.mount = renderChatBubble; // Alias intuitivo
+    globalWindow.CapinChat.unmountChatBubble = unmountChatBubble;
+    globalWindow.CapinChat.unmount = unmountChatBubble; // Alias intuitivo
     globalWindow.CapinChat.autoBootOnce = autoBootOnce;
 
-    console.log('[Chat] API global configurada: window.CapinChat.renderChatBubble disponible');
+    console.log('[Chat] API global configurada: window.CapinChat.mount/unmount disponible');
   }
 
   // Instalar fallbacks de imágenes
