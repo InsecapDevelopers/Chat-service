@@ -3,7 +3,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { useShadowRoot } from "@/contexts/ShadowRootContext"
+import { useShadowPortal } from "@/contexts/ShadowPortalContext"
 
 const Dialog = DialogPrimitive.Root
 
@@ -32,17 +32,10 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
-  const { shadowRoot } = useShadowRoot();
-
-  // Montar portal dentro del Shadow DOM si existe, sino en #capin-chat-root
-  const container = shadowRoot 
-    ? (shadowRoot as unknown as HTMLElement)
-    : (typeof document !== 'undefined' 
-        ? document.getElementById('capin-chat-root') || undefined
-        : undefined);
+  const portalContainer = useShadowPortal();
 
   return (
-    <DialogPortal container={container}>
+    <DialogPortal container={portalContainer || undefined}>
       <DialogOverlay />
       <DialogPrimitive.Content
         ref={ref}
@@ -50,6 +43,10 @@ const DialogContent = React.forwardRef<
           "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
           className
         )}
+        style={{
+          ...props.style,
+          pointerEvents: 'auto'
+        }}
         {...props}
       >
         {children}

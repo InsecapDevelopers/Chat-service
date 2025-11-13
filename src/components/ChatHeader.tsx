@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { SafeButton as Button } from "@/components/ui/safe-button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +12,7 @@ import {
 import { X, Trash2, ChevronDown, RotateCcw } from "lucide-react";
 import insecapLogo from "@/assets/insecap-logo4.png";
 import capinMascot from "@/assets/capin-mascot.png";
+import { useShadowPortal } from "@/contexts/ShadowPortalContext";
 
 type AppRole = "tms" | "publico" | "alumno" | "relator" | "cliente";
 
@@ -67,6 +68,9 @@ export const ChatHeader = ({
   selectedClienteId = "",
   onChangeSelectedCliente,
 }: ChatHeaderProps) => {
+  // Obtener contenedor de portal para Radix UI
+  const portalContainer = useShadowPortal();
+  
   // En modo ADMIN, mostrar inputs según el rol para poder testear
   // En modo normal (embebido), los datos vienen desde TMS internamente
   // RUT solo para alumno y relator (cliente lo maneja en su propio bloque)

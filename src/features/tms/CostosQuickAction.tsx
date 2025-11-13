@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { SafeButton as Button } from "@/components/ui/safe-button";
 import { DollarSign } from "lucide-react";
 import { CostosSearchModal } from "./CostosSearchModal";
 import { sendCustomTelemetry } from "@/lib/telemetry";

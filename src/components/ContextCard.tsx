@@ -1,6 +1,6 @@
 // src/components/ContextCard.tsx
 import { X, Building2, BookOpen, User, GraduationCap } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { SafeButton as Button } from "@/components/ui/safe-button";
 import type { ContextObject, ContextObjectType } from "./ContextMenu";
 
 interface ContextCardProps {

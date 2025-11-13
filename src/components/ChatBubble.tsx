@@ -39,7 +39,8 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
   clientesAsociados,
   className = '',
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  // SIEMPRE abierto por defecto para testing
+  const [isOpen, setIsOpen] = useState(true);
   
   // Generar sessionId aleatorio para usuarios públicos si no se proporciona
   const generateSessionId = (role?: string) => {
@@ -168,6 +169,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
     };
 
   const toggleChat = () => {
+    console.log('[ChatBubble] 🖱️ Click en botón - toggling chat. Estado actual:', isOpen);
     setIsOpen(!isOpen);
   };
 
@@ -177,7 +179,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
 
   // Contenido del chat bubble
   const chatBubbleContent = (
-    <>
+    <div>
       {/* Botón flotante */}
       {!isOpen && (
         <button
@@ -256,7 +258,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 
   return chatBubbleContent;

@@ -24,7 +24,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Button } from "@/components/ui/button";
+import { SafeButton as Button } from "@/components/ui/safe-button";
 import { useToast } from "@/hooks/use-toast";
 import { TmsQuickActions, type TmsActionType } from "./TmsQuickActions";
 import { AlumnoQuickActions } from "@/features/alumno";

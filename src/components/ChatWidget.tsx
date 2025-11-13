@@ -1,16 +1,63 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect, useRef } from "react";
+import { SafeButton as Button } from "@/components/ui/safe-button";
 import { MessageCircle } from "lucide-react";
 import capinMascot from "@/assets/capin-mascot.png";
 import { CapinChat } from "./CapinChat";
+import { ContactProvider } from '@/contexts/ContactContext';
+import { AuthContext, SafeUser } from '@/contexts/AuthContext';
+import { ShadowPortalProvider } from '@/contexts/ShadowPortalContext';
 
-const ChatWidget = () => {
-  // En modo desarrollo, abrir el chat automáticamente
-  const [open, setOpen] = useState(import.meta.env.DEV);
+export interface ChatWidgetProps {
+  /** ID único del usuario (GUID de TMS) */
+  userId?: string;
+  userName?: string;
+  userRut?: string;
+  userEmail?: string;
+  userRole?: 'tms' | 'publico' | 'alumno' | 'relator' | 'cliente' | 'logistica' | string;
+  sessionId?: string;
+  /** Rol original de TMS (antes del mapeo) */
+  tmsOriginalRole?: string;
+  /** Si el usuario puede cambiar de rol (solo Admin) */
+  canSwitchRole?: boolean;
+  /** ID del cliente (para rol cliente) */
+  idCliente?: string;
+  /** Lista de clientes asociados (para representante empresa) */
+  clientesAsociados?: Array<{ idCliente: string; nombre: string }>;
+  className?: string;
+}
+
+const ChatWidget: React.FC<ChatWidgetProps> = ({
+  userId,
+  userName,
+  userRut,
+  userEmail,
+  userRole = 'publico',
+  sessionId,
+  tmsOriginalRole,
+  canSwitchRole = false,
+  idCliente,
+  clientesAsociados,
+  className = '',
+}) => {
+  // Empezar cerrado para mostrar el botón
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement | null>(null);
 
   // Log de montaje
   useEffect(() => {
     console.log('[ChatWidget] Componente montado. Estado inicial open =', open);
+    
+    // Verificar que el botón está disponible
+    queueMicrotask(() => {
+      if (btnRef.current) {
+        console.log('[ChatWidget] ✅ Ref del botón establecida:', btnRef.current);
+        const computed = window.getComputedStyle(btnRef.current);
+        console.log('[ChatWidget] pointer-events del botón:', computed.pointerEvents);
+      } else {
+        console.warn('[ChatWidget] ⚠️ Ref del botón NO establecida');
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Notificar al host del Shadow DOM sobre cambios de estado
@@ -31,20 +78,33 @@ const ChatWidget = () => {
   if (!open) {
     return (
       <div 
-        className="fixed right-4 bottom-4 md:right-6 md:bottom-6 z-[60] pointer-events-auto"
+        className="relative z-[60] pointer-events-auto"
         style={{ pointerEvents: 'auto' }}
       >
         <div className="relative">
           <button
+            ref={btnRef}
             aria-label="Abrir chat CapinIA"
             onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('[ChatWidget] Click en botón - abriendo chat');
+              console.log('[ChatWidget] ✅ onClick disparado - abriendo chat');
               setOpen(true);
             }}
             onMouseDown={(e) => {
-              console.log('[ChatWidget] MouseDown en botón');
+              console.log('[ChatWidget] MouseDown en botón', e.button);
+            }}
+            onMouseUp={(e) => {
+              console.log('[ChatWidget] MouseUp en botón', e.button);
+            }}
+            onPointerDown={(e) => {
+              console.log('[ChatWidget] PointerDown en botón', e.pointerType);
+            }}
+            onPointerUp={(e) => {
+              console.log('[ChatWidget] ⬆️ PointerUp en botón', e.pointerType);
+              // Fallback: si onClick no funciona, usar PointerUp
+              if (!open) {
+                console.log('[ChatWidget] 🔄 Fallback: Abriendo desde PointerUp');
+                setOpen(true);
+              }
             }}
             className="h-14 w-14 md:h-16 md:w-16 rounded-full bg-gradient-to-br from-primary to-accent shadow-xl hover:scale-110 transition-transform inline-flex items-center justify-center border-0 cursor-pointer"
             style={{
@@ -94,20 +154,58 @@ const ChatWidget = () => {
     );
   }
 
+  // Generar sessionId aleatorio para usuarios públicos si no se proporciona
+  const generateSessionId = (role?: string) => {
+    if (role === 'publico' && !sessionId) {
+      return `publico-${Math.random().toString(36).substr(2, 9)}-${Date.now()}`;
+    }
+    return sessionId;
+  };
+
+  const mockAuthContextValue = {
+    user: userName ? {
+      sub: sessionId || 'external-user',
+      displayName: userName,
+      role: userRole || 'publico',
+      tenantId: userRut || undefined,
+      sessionToken: sessionId,
+      claims: {
+        id: userId || '',
+        name: userName || '',
+        email: userEmail || '',
+        rut: userRut || '',
+      }
+    } : null,
+    loading: false,
+    setUser: () => {},
+    signOutLocal: () => {},
+  };
+
   return (
-    <div className="fixed inset-x-2 bottom-2 md:inset-auto md:right-6 md:bottom-6 z-[60] pointer-events-auto">
-      <div className="relative mx-auto md:mx-0 w-full [width:min(92vw,440px)]">
-        <div className="bg-white border border-border rounded-xl shadow-2xl w-full h-[70vh] max-h-[80vh] md:h-[600px] overflow-hidden">
-          <CapinChat
-            className="h-full max-w-none w-full"
-            apiEndpoint={import.meta.env.VITE_API_ENDPOINT}
-            sessionScope="guest"
-            showWelcome={true}
-            onClose={() => setOpen(false)}
-          />
-        </div>
-      </div>
-    </div>
+    <AuthContext.Provider value={mockAuthContextValue}>
+      <ShadowPortalProvider>
+        <ContactProvider isAuthenticated={true}>
+          <div className="relative z-[60] pointer-events-auto" style={{ pointerEvents: 'auto' }}>
+            <div className="relative [width:min(92vw,440px)]">
+              <div className="bg-white border border-border rounded-xl shadow-2xl w-full h-[70vh] max-h-[80vh] md:h-[600px] overflow-hidden pointer-events-auto" style={{ pointerEvents: 'auto' }}>
+                <CapinChat
+                  className="h-full max-w-none w-full"
+                  apiEndpoint={import.meta.env.VITE_API_ENDPOINT}
+                  sessionScope="guest"
+                  showWelcome={true}
+                  onClose={() => setOpen(false)}
+                  userRole={userRole}
+                  canSwitchRole={canSwitchRole}
+                  tmsOriginalRole={tmsOriginalRole}
+                  initialIdCliente={idCliente}
+                  clientesAsociados={clientesAsociados}
+                />
+              </div>
+            </div>
+          </div>
+        </ContactProvider>
+      </ShadowPortalProvider>
+    </AuthContext.Provider>
   );
 };
 

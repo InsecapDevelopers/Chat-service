@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { SafeButton as Button } from "@/components/ui/safe-button";
 import { FileText } from "lucide-react";
 import { R24Modal } from "@/components/R24Modal";
 import { sendCustomTelemetry } from "@/lib/telemetry";

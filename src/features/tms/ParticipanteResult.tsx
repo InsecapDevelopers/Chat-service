@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+import { SafeButton as Button } from "@/components/ui/safe-button";
 import { Badge } from "@/components/ui/badge";
 import { FileText, ExternalLink } from "lucide-react";
 

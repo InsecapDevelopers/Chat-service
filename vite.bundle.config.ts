@@ -20,12 +20,18 @@ export default defineConfig({
       // external: ['react', 'react-dom'],
       output: {
         // Configuración para UMD
-        exports: 'named'
+        exports: 'named',
+        // Deshabilitar code-splitting para generar un bundle único
+        inlineDynamicImports: true,
+        // Mantener todo en un solo archivo
+        manualChunks: undefined
       }
     },
     outDir: 'dist/bundle',
     emptyOutDir: true,
-    sourcemap: true
+    sourcemap: true,
+    // Aumentar límite de tamaño de chunk para evitar warnings
+    chunkSizeWarningLimit: 2000
   },
   resolve: {
     alias: {

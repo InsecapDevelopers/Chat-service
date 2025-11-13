@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+import { SafeButton as Button } from "@/components/ui/safe-button";
 import { FileText } from "lucide-react";
 
 interface ConsultarR11QuickActionProps {

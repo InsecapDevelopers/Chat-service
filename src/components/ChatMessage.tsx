@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { SafeButton as Button } from "@/components/ui/safe-button";
 import { Copy, Check, ExternalLink, Building2, BookOpen, User, GraduationCap } from "lucide-react";
 import capinMascot from "@/assets/capin-mascot.png";
 import { RelatorResult } from "@/features/tms/RelatorResult";

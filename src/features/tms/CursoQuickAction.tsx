@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+import { SafeButton as Button } from "@/components/ui/safe-button";
 import { BookOpen } from "lucide-react";
 
 interface CursoQuickActionProps {

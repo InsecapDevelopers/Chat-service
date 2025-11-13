@@ -2,6 +2,13 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { ChatBubble, UserData } from '../components/ChatBubble';
 import { ShadowRootProvider } from '../contexts/ShadowRootContext';
+import { mapTmsRoleToCapin } from './tmsRoleMapper';
+
+/**
+ * Referencia global al contenedor de portales de Shadow DOM
+ * Inicializado en initializeChat() y usado por ShadowPortalContext
+ */
+export let globalPortalContainer: HTMLElement | null = null;
 
 /**
  * Tipos para los datos del usuario de TMS
@@ -126,31 +133,20 @@ const injectShadowStyles = async (shadowRoot: ShadowRoot): Promise<void> => {
     `;
   }
 
-  // TRANSFORMAR: REMOVER COMPLETAMENTE el prefijo #capin-chat-root
-  // Shadow DOM provee aislamiento natural, no necesitamos prefijos
-  // #capin-chat-root .clase → .clase (directo)
-  let transformedCSS = css;
+  // NO TRANSFORMAR: Mantener prefijos #capin-chat-root para especificidad
+  // El wrapper interno con id="capin-chat-root" permitirá que las reglas funcionen
+  console.log('[Chat] ✅ CSS SIN transformar: Manteniendo prefijos #capin-chat-root');
+  console.log('[Chat] 📝 CSS Preview (primeros 500 chars):', css.substring(0, 500));
   
-  // Remover TODOS los prefijos #capin-chat-root
-  transformedCSS = transformedCSS.replace(/#capin-chat-root\s+/g, '');
-  transformedCSS = transformedCSS.replace(/#capin-chat-root,/g, '');
-  transformedCSS = transformedCSS.replace(/#capin-chat-root\s*{/g, '{');
-  transformedCSS = transformedCSS.replace(/#capin-chat-root::/g, '::');
-  transformedCSS = transformedCSS.replace(/#capin-chat-root\./g, '.');
-  transformedCSS = transformedCSS.replace(/#capin-chat-root#/g, '#');
-  
-  console.log('[Chat] 🔄 CSS transformado: Prefijos #capin-chat-root REMOVIDOS');
-  console.log('[Chat] 📝 Muestra transformada (primeros 500 chars):', transformedCSS.substring(0, 500));
-  
-  // Agregar estilos al Shadow DOM
-  styleTag.textContent = transformedCSS;
+  // Agregar estilos al Shadow DOM SIN modificar
+  styleTag.textContent = css;
   shadowRoot.appendChild(styleTag);
-  console.log('[Chat] ✅ CSS inline del bundle cargado:', transformedCSS.length, 'bytes');
+  console.log('[Chat] ✅ CSS inline del bundle cargado:', css.length, 'bytes');
 
   // Constructable Stylesheet (opcional)
   try {
     const sheet = new CSSStyleSheet();
-    await sheet.replace(transformedCSS);
+    await sheet.replace(css);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (shadowRoot as any).adoptedStyleSheets = [ ...((shadowRoot as any).adoptedStyleSheets || []), sheet ];
     console.log('[Chat] ✅ adoptedStyleSheets aplicado');
@@ -166,7 +162,7 @@ const injectShadowStyles = async (shadowRoot: ShadowRoot): Promise<void> => {
       console.error('[Chat] ❌ CRÍTICO: Estilos NO se inyectaron correctamente');
       // Reintentar inyección
       const backupStyle = document.createElement('style');
-      backupStyle.textContent = transformedCSS;
+      backupStyle.textContent = css;
       backupStyle.setAttribute('data-chat-styles-backup', 'true');
       shadowRoot.appendChild(backupStyle);
       console.log('[Chat] 🔄 Estilos reinyectados como backup');
@@ -276,14 +272,15 @@ export const renderChatBubble = async (
       host = newHost as HostWithCapinData;
     }
 
-    // IMPORTANTE: Aplicar z-index y posicionamiento al HOST
-    // El shadow DOM heredará estas propiedades
+    // Host localizado en esquina inferior derecha (NO fullscreen)
     host.style.cssText = `
       position: fixed !important;
       right: 20px !important;
       bottom: 20px !important;
       z-index: ${zIndex} !important;
-      pointer-events: none !important;
+      width: auto !important;
+      height: auto !important;
+      pointer-events: auto !important;
     `;
 
     // 2. Idempotencia: si ya existe un root, desmontarlo
@@ -306,24 +303,39 @@ export const renderChatBubble = async (
     if (debug) console.log('[Chat] Inyectando estilos en Shadow DOM...');
     await injectShadowStyles(shadowRoot);
 
-    // 5. Crear punto de montaje para React DIRECTAMENTE (sin wrapper)
+    // 5. Contenedor de montaje React (simple, sin wrappers adicionales)
     const mountPoint = document.createElement('div');
     mountPoint.id = 'capin-chat-mount';
-    // pointer-events: none permite que clics pasen excepto en elementos hijos con pointer-events: auto
     mountPoint.style.cssText = `
-      position: fixed !important;
-      inset: 0 !important;
-      pointer-events: none !important;
+      position: relative !important;
     `;
     shadowRoot.appendChild(mountPoint);
+
+    // 6. Contenedor para portales de Radix UI (Select, Dropdown, etc.)
+    const portalContainer = document.createElement('div');
+    portalContainer.setAttribute('data-chat-portal-root', '');
+    portalContainer.style.cssText = `
+      position: fixed !important;
+      z-index: 9999 !important;
+      pointer-events: none !important;
+    `;
+    shadowRoot.appendChild(portalContainer);
+    
+    // Guardar referencia global para ShadowPortalContext
+    globalPortalContainer = portalContainer;
+    
+    if (debug) console.log('[Chat] ✅ Contenedor de portales creado');
 
     // VALIDACIÓN: Verificar que la estructura está completa
     if (!shadowRoot.querySelector('#capin-chat-mount')) {
       throw new Error('[Chat] CRÍTICO: #capin-chat-mount no se creó');
     }
+    if (!shadowRoot.querySelector('[data-chat-portal-root]')) {
+      throw new Error('[Chat] CRÍTICO: data-chat-portal-root no se creó');
+    }
     if (debug) console.log('[Chat] ✅ Estructura Shadow DOM validada correctamente');
 
-    // 6. Normalizar datos del usuario
+    // 7. Normalizar datos del usuario
     const label = (userData && (userData.email || userData.name)) || 'Usuario';
     
     // 7. Deduplicar clientes asociados
@@ -338,7 +350,10 @@ export const renderChatBubble = async (
       clientesDeduplicados = Array.from(clientesUnicos.values());
     }
 
-    // 8. Convertir userData de TMS a formato interno
+    // 8. Mapear rol de TMS a rol de chat
+    const roleMapping = mapTmsRoleToCapin(userData?.role);
+    
+    // 9. Convertir userData de TMS a formato interno
     const chatBubbleProps: UserData = {
       userId: userData?.id,
       userName: userData?.name,
@@ -347,6 +362,7 @@ export const renderChatBubble = async (
       userRole: (userData?.role || 'publico') as unknown as string,
       sessionId: userData?.session_id,
       tmsOriginalRole: userData?.role,
+      canSwitchRole: roleMapping.canSwitchRole, // ✅ Agregar desde el mapeo
       idCliente: userData?.idCliente,
       clientesAsociados: clientesDeduplicados,
     };
@@ -358,18 +374,23 @@ export const renderChatBubble = async (
       console.log('[Chat] Email:', userData?.email);
       console.log('[Chat] RUT:', userData?.rut);
       console.log('[Chat] Rol Original (TMS):', userData?.role);
+      console.log('[Chat] Rol Mapeado:', roleMapping.capinRole);
+      console.log('[Chat] Puede Cambiar Rol:', roleMapping.canSwitchRole); // ✅ Log
       console.log('[Chat] Session ID:', userData?.session_id);
       console.log('[Chat] ID Cliente:', userData?.idCliente);
       console.log('[Chat] Clientes Asociados:', clientesDeduplicados?.length || 0);
       console.log('[Chat] ===================================================');
     }
 
-    // 9. Montar React en el Shadow DOM con contexto
+    // 9. Montar React en el Shadow DOM con ChatWidget (incluye botón)
+    const ChatWidgetModule = await import('../components/ChatWidget');
+    const ChatWidget = ChatWidgetModule.default;
+    
     const root = ReactDOM.createRoot(mountPoint);
     root.render(
       React.createElement(
         ShadowRootProvider,
-        { shadowRoot, zIndex, children: React.createElement(ChatBubble, chatBubbleProps) }
+        { shadowRoot, zIndex, children: React.createElement(ChatWidget, chatBubbleProps) }
       )
     );
     
@@ -377,6 +398,7 @@ export const renderChatBubble = async (
     setTimeout(() => {
       const shadowStyle = shadowRoot.querySelector('style[data-chat-styles]');
       const reactMount = shadowRoot.querySelector('#capin-chat-mount');
+      const button = shadowRoot.querySelector('button');
       
       if (!shadowStyle) {
         console.error('[Chat] ❌ CRÍTICO: Estilos NO encontrados en Shadow DOM');
@@ -385,79 +407,50 @@ export const renderChatBubble = async (
       }
       
       if (!reactMount || !reactMount.hasChildNodes()) {
-        console.error('[Chat] ❌ CRÍTICO: React NO se montó correctamente');
+        console.error('[Chat] ❌ CRÍTICO: React NO se montó correctamente en #capin-chat-mount');
+        console.error('[Chat] 🔍 Debug: reactMount existe?', !!reactMount);
+        console.error('[Chat] 🔍 Debug: tiene hijos?', reactMount?.hasChildNodes());
+        console.error('[Chat] 🔍 Debug: innerHTML length:', reactMount?.innerHTML?.length || 0);
       } else {
         console.log('[Chat] ✅ React montado con', reactMount.children.length, 'elementos hijos');
         
-        // Inspeccionar primer elemento renderizado
-        const firstChild = reactMount.firstElementChild;
-        if (firstChild) {
-          const childComputed = window.getComputedStyle(firstChild);
-          console.log('[Chat] 🎨 Estilos del primer hijo React:');
-          console.log('  - className:', firstChild.className);
-          console.log('  - display:', childComputed.display);
-          console.log('  - width:', childComputed.width);
-          console.log('  - height:', childComputed.height);
-          console.log('  - visibility:', childComputed.visibility);
-          console.log('  - opacity:', childComputed.opacity);
-          console.log('  - position:', childComputed.position);
-          console.log('  - z-index:', childComputed.zIndex);
-          
-          // Buscar el botón del chat específicamente
-          const chatButton = firstChild.querySelector('button');
-          if (chatButton) {
-            const buttonComputed = window.getComputedStyle(chatButton);
-            console.log('[Chat] 🔘 Botón encontrado:');
-            console.log('  - display:', buttonComputed.display);
-            console.log('  - visibility:', buttonComputed.visibility);
-            console.log('  - opacity:', buttonComputed.opacity);
-            console.log('  - width:', buttonComputed.width);
-            console.log('  - height:', buttonComputed.height);
-            console.log('  - position:', buttonComputed.position);
-            console.log('  - pointerEvents:', buttonComputed.pointerEvents);
-          } else {
-            console.warn('[Chat] ⚠️ No se encontró el botón del chat');
-          }
-          
-          // NUEVO: Inspeccionar elementos internos críticos
-          const chatWidget = firstChild.querySelector('.capin-chat-widget');
-          if (chatWidget) {
-            const widgetComputed = window.getComputedStyle(chatWidget);
-            console.log('[Chat] 🔍 Widget .capin-chat-widget encontrado:', {
-              display: widgetComputed.display,
-              width: widgetComputed.width,
-              height: widgetComputed.height,
-              backgroundColor: widgetComputed.backgroundColor,
-              visibility: widgetComputed.visibility,
-              opacity: widgetComputed.opacity
-            });
-          } else {
-            console.log('[Chat] ℹ️ Widget .capin-chat-widget no encontrado (normal si el chat está cerrado)');
-          }
-          
-          // EXPONER ELEMENTO PARA INSPECCIÓN EN CONSOLA
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (window as any).__CAPIN_CHAT_DEBUG__ = {
-            shadowRoot,
-            firstChild,
-            host: shadowRoot.host,
-            reactMount,
-            inspect: () => {
-              console.log('=== SHADOW DOM STRUCTURE ===');
-              console.log('Host:', shadowRoot.host);
-              console.log('React Mount:', reactMount);
-              console.log('First Child:', firstChild);
-              console.log('First Child HTML:', firstChild?.outerHTML?.substring(0, 500));
-            }
-          };
-          console.log('[Chat] 🔧 Debug disponible: window.__CAPIN_CHAT_DEBUG__.inspect()');
+        // Inspeccionar botón
+        if (button) {
+          console.log('[Chat] ✅ Botón encontrado en shadow:', button);
+          const btnComputed = window.getComputedStyle(button);
+          console.log('[Chat] 🎨 Estilos del botón:');
+          console.log('  - pointer-events:', btnComputed.pointerEvents);
+          console.log('  - cursor:', btnComputed.cursor);
+          console.log('  - width:', btnComputed.width);
+          console.log('  - height:', btnComputed.height);
+          console.log('  - visibility:', btnComputed.visibility);
+          console.log('  - opacity:', btnComputed.opacity);
+          console.log('  - position:', btnComputed.position);
+          console.log('  - z-index:', btnComputed.zIndex);
+        } else {
+          console.warn('[Chat] ⚠️ No se encontró el botón del chat');
         }
+        
+        // EXPONER ELEMENTO PARA INSPECCIÓN EN CONSOLA
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).__CAPIN_CHAT_DEBUG__ = {
+          shadowRoot,
+          mountPoint: reactMount,
+          host: shadowRoot.host,
+          inspect: () => {
+            console.log('=== SHADOW DOM STRUCTURE ===');
+            console.log('Host:', shadowRoot.host);
+            console.log('Mount Point:', reactMount);
+            console.log('Button:', shadowRoot.querySelector('button'));
+          }
+        };
+        console.log('[Chat] 🔧 Debug disponible: window.__CAPIN_CHAT_DEBUG__.inspect()');
       }
       
       if (shadowStyle && reactMount?.hasChildNodes()) {
         console.log('[Chat] ✅ Validación completa: Estilos + Estructura + React OK');
       }
-    }, 500);
+    }, 100);
     
     // Guardar referencia para cleanup
     host.__capinRoot = root;

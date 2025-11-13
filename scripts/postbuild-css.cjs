@@ -6,33 +6,17 @@ const cssFilePath = path.resolve(__dirname, '../dist/bundle/style.css');
 
 console.log('🔧 [PostBuild CSS] Iniciando transformación de estilos del chat...');
 
-// PRIMERO: Copiar el CSS ORIGINAL y LIMPIAR los prefijos #capin-chat-root  
+// PRIMERO: Copiar el CSS ORIGINAL MANTENIENDO los prefijos #capin-chat-root
 const shadowStylesPath = path.resolve(__dirname, '../src/assets/shadow-styles.css');
 let originalCSS = fs.readFileSync(cssFilePath, 'utf8'); // CSS de Vite
 
-console.log('📝 [PostBuild CSS] Limpiando TODOS los prefijos del CSS...');
+console.log('📝 [PostBuild CSS] Manteniendo prefijos #capin-chat-root para Shadow DOM...');
 
-// Eliminar TODOS los prefijos #capin-chat-root (PostCSS)
-originalCSS = originalCSS.replace(/#capin-chat-root\s+/g, '');
-originalCSS = originalCSS.replace(/#capin-chat-root,/g, '');
-originalCSS = originalCSS.replace(/#capin-chat-root\s*{/g, '{');
-originalCSS = originalCSS.replace(/#capin-chat-root\./g, '.');
-originalCSS = originalCSS.replace(/#capin-chat-root#/g, '#');
-originalCSS = originalCSS.replace(/#capin-chat-root\*/g, '*');
-
-// Eliminar TODOS los prefijos #chat-bubble-container (hardcoded en source)
-originalCSS = originalCSS.replace(/#chat-bubble-container\s+/g, '');
-originalCSS = originalCSS.replace(/#chat-bubble-container,/g, '');
-originalCSS = originalCSS.replace(/#chat-bubble-container\s*{/g, '{');
-originalCSS = originalCSS.replace(/#chat-bubble-container\./g, '.');
-originalCSS = originalCSS.replace(/#chat-bubble-container#/g, '#');
-originalCSS = originalCSS.replace(/#chat-bubble-container\*/g, '*');
-
-console.log('📝 [PostBuild CSS] Guardando CSS limpio (sin prefijos) para Shadow DOM...');
-// Replace :root with :host for Shadow DOM CSS variables
+// NO ELIMINAR prefijos - mantenerlos para que funcionen con el wrapper interno
+// Solo convertir :root a :host para variables CSS
 originalCSS = originalCSS.replace(/:root\{/g, ':host{');
 fs.writeFileSync(shadowStylesPath, originalCSS);
-console.log('✅ [PostBuild CSS] shadow-styles.css creado con CSS limpio (prefijos + :root → :host)');
+console.log('✅ [PostBuild CSS] shadow-styles.css creado con prefijos #capin-chat-root MANTENIDOS');
 
 // SEGUNDO: Leer el archivo CSS para transformarlo (agregar MÁS prefijos para standalone)
 const css = fs.readFileSync(cssFilePath, 'utf8');

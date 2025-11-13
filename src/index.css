@@ -156,19 +156,54 @@ body:has(.radix-no-scroll-block[data-state="open"]) {
   overflow: auto !important;
 }
 
-/* Asegurar que todos los elementos interactivos en el chat funcionen */
-#capin-chat-root *,
-#capin-chat-root button,
-#capin-chat-root input,
-#capin-chat-root select,
-#capin-chat-root textarea {
-  pointer-events: auto !important;
-}
-
 /* Asegurar que los overlays de Radix UI funcionen en TMS embebido */
 [data-radix-select-viewport],
 [data-radix-popover-content],
 [data-radix-dialog-content] {
   pointer-events: auto !important;
   z-index: 2147483647 !important;
+}
+
+/* FORZAR pointer-events auto en TODOS los elementos interactivos dentro del Shadow DOM */
+button,
+a,
+[role="button"],
+[role="link"],
+[role="menuitem"],
+[role="option"],
+[role="tab"],
+[role="checkbox"],
+[role="radio"],
+[role="switch"],
+[data-radix-collection-item],
+[data-state] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Inputs y textareas con cursor de texto */
+input,
+select,
+textarea {
+  pointer-events: auto !important;
+  cursor: text !important;
+}
+
+/* Select específicamente con cursor pointer */
+select,
+[role="combobox"] {
+  cursor: pointer !important;
+}
+
+/* Específicamente para elementos Radix UI */
+[data-radix-select-trigger],
+[data-radix-select-content],
+[data-radix-select-item],
+[data-radix-dropdown-menu-trigger],
+[data-radix-dropdown-menu-content],
+[data-radix-dropdown-menu-item],
+[data-radix-dialog-trigger],
+[data-radix-popover-trigger] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
 }

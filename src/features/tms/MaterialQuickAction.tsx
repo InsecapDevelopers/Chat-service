@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { SafeButton as Button } from "@/components/ui/safe-button";
 import { BookOpen } from "lucide-react";
 import { MaterialCursoModal } from "@/components/MaterialCursoModal";
 import { sendCustomTelemetry } from "@/lib/telemetry";
