@@ -806,6 +806,8 @@ export const CapinChat = ({
         if (payload.target?.codigoComer) {
           displayMessage = `Consultar material del curso: ${payload.target.codigoComer}`;
         }
+      } else if (payload.intent === "publico.get_comercial_turno") {
+        displayMessage = "¿Quién es el comercial de turno?";
       }
 
       // Agregar mensaje del usuario al chat
@@ -1398,6 +1400,19 @@ export const CapinChat = ({
     await handleAdditionalActionSend(payload);
   };
 
+  // Handler para consulta de Comercial de Turno
+  const handleComercialTurnoRequest = async () => {
+    // Crear payload para consulta de comercial de turno
+    const payload = {
+      source: "quick_action",
+      intent: "publico.get_comercial_turno",
+      message: "¿Quién es el comercial de turno?",
+    };
+    
+    // Enviar búsqueda automática usando handleAdditionalActionSend
+    await handleAdditionalActionSend(payload);
+  };
+
   // ADD: Atajo de teclado Ctrl+K para R11
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1764,7 +1779,7 @@ export const CapinChat = ({
   return (
     <div
       className={`bg-white border border-gray-300 shadow-chat rounded-xl overflow-hidden flex flex-col h-[600px] max-w-md w-full ${className}`}
-      style={{ minHeight: '600px', minWidth: '320px' }}
+      style={{ minHeight: '600px', minWidth: '280px' }}
     >
       <ContactModalIntegration userRole={selectedRole} />
       
@@ -1793,6 +1808,7 @@ export const CapinChat = ({
           setSelectedClienteId(id);
           setSelectedClienteNombre(nombre);
         }}
+        onComercialTurnoRequest={handleComercialTurnoRequest}
       />
 
       {/* ADD: Acciones TMS - Solo para roles tms:* */}

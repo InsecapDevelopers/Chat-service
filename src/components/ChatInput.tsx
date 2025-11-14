@@ -106,10 +106,10 @@ export const ChatInput = ({
 
   return (
     <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <form onSubmit={handleSubmit} className="p-4">
+      <form onSubmit={handleSubmit} className="p-2 sm:p-3 md:p-4">
         {/* Contextos agregados */}
         {contexts.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-3">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-3">
             {contexts.map((ctx) => (
               <ContextCard
                 key={ctx.id}
@@ -120,7 +120,7 @@ export const ChatInput = ({
           </div>
         )}
 
-        <div className="flex gap-2 items-end">
+        <div className="flex gap-1.5 sm:gap-2 items-end">
           {/* Botón de adjuntar contexto (solo TMS) */}
           {showContextMenu && (
             <ContextMenu
@@ -141,10 +141,11 @@ export const ChatInput = ({
               disabled={disabled}
               rows={1}
               className={`
-                min-h-[44px]
-                max-h-[300px]
+                min-h-[40px] sm:min-h-[44px]
+                max-h-[200px] sm:max-h-[300px]
                 resize-none
-                pr-12
+                pr-10 sm:pr-12
+                text-sm sm:text-base
                 border-2
                 focus:border-primary
                 transition-colors
@@ -174,9 +175,9 @@ export const ChatInput = ({
           <Button
             type="submit"
             disabled={disabled || !message.trim()}
-            className="shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center rounded-2xl shadow-md"
+            className="shrink-0 h-10 w-10 sm:h-auto sm:w-auto sm:px-4 bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center rounded-2xl shadow-md"
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
         </div>
       </form>

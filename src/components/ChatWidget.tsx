@@ -126,7 +126,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
                 setOpen(true);
               }
             }}
-            className="h-14 w-14 md:h-16 md:w-16 rounded-full bg-gradient-to-br from-primary to-accent shadow-xl hover:scale-110 transition-transform inline-flex items-center justify-center border-0 cursor-pointer"
+            className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full bg-gradient-to-br from-primary to-accent shadow-xl hover:scale-110 transition-transform inline-flex items-center justify-center border-0 cursor-pointer"
             style={{
               background: 'linear-gradient(135deg, hsl(227 58% 53%), hsl(191 100% 47%))',
               border: 'none',
@@ -134,7 +134,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
               pointerEvents: 'auto'
             }}
           >
-            <MessageCircle className="h-7 w-7 md:h-8 md:w-8 text-white" />
+            <MessageCircle className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-white" />
           </button>
 
           {showWelcome && (
