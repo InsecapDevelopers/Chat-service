@@ -2,16 +2,18 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
-// Plugin para eliminar console.log en producción
+// Plugin para eliminar console.log en producción  
 const removeConsolePlugin = () => ({
   name: 'remove-console',
   transform(code: string, id: string) {
     if (id.includes('node_modules')) return null;
     
-    // Eliminar console.log, console.info, console.debug, console.warn (preservar console.error)
-    const cleaned = code
-      .replace(/console\.(log|info|debug|warn)\([^)]*\);?/g, '')
-      .replace(/console\.(log|info|debug|warn)`[^`]*`;?/g, '');
+    // Simplemente comentar las líneas con console.log/info/debug/warn
+    // Esto es más seguro que intentar eliminarlas completamente
+    const cleaned = code.replace(
+      /^(\s*)console\.(log|info|debug|warn)\(/gm,
+      '$1// console.$2('
+    );
     
     return { code: cleaned, map: null };
   }
@@ -19,7 +21,7 @@ const removeConsolePlugin = () => ({
 
 // Configuración específica para el bundle del ChatBubble
 export default defineConfig({
-  plugins: [react(), removeConsolePlugin()],
+  plugins: [react()], // removeConsolePlugin deshabilitado temporalmente
   css: {
     postcss: './postcss.bundle.config.js'
   },
@@ -46,7 +48,15 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: true,
     // Aumentar límite de tamaño de chunk para evitar warnings
-    chunkSizeWarningLimit: 2000
+    chunkSizeWarningLimit: 2000,
+    // Configurar minificación con Terser para eliminar console logs
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,  // Eliminar console.log, console.info, etc
+        drop_debugger: true  // Eliminar debugger statements
+      }
+    }
   },
   resolve: {
     alias: {
