@@ -70,7 +70,7 @@ export const AprobadosModal = ({ isOpen, onClose, onConfirm }: AprobadosModalPro
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCodigoComer(e.target.value);
+    setCodigoComer(e.target.value.toUpperCase());
     if (error) setError(""); // Limpiar error al escribir
   };
 

@@ -52,7 +52,6 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
 
   // Mapear el rol inicial desde las props
   const initialRoleMapping = mapTmsRoleToCapin(userRole);
-  console.log('[ChatBubble Init] Rol props:', userRole, '→ Mapeado:', initialRoleMapping);
 
   const [currentUserData, setCurrentUserData] = useState<UserData>({
     userId,
@@ -69,17 +68,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
 
   // Actualizar cuando las props cambien (para renderizado directo vía bundleUtils)
   useEffect(() => {
-    console.log('[ChatBubble] ========== PROPS RECIBIDAS ==========');
-    console.log('[ChatBubble] userName:', userName);
-    console.log('[ChatBubble] userRole:', userRole);
-    console.log('[ChatBubble] userRut:', userRut);
-    console.log('[ChatBubble] userEmail:', userEmail);
-    console.log('[ChatBubble] sessionId:', sessionId);
-    console.log('[ChatBubble] idCliente:', idCliente);
-    console.log('[ChatBubble] clientesAsociados:', clientesAsociados);
-    
     const roleMapping = mapTmsRoleToCapin(userRole);
-    console.log('[ChatBubble] Rol mapeado:', roleMapping);
     
     setCurrentUserData(prev => {
       const updatedData = {
@@ -95,9 +84,6 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
         clientesAsociados: clientesAsociados || prev.clientesAsociados,
       };
       
-      console.log('[ChatBubble] Estado actualizado:', updatedData);
-      console.log('[ChatBubble] =====================================');
-      
       return updatedData;
     });
   }, [userName, userRole, userRut, userEmail, sessionId, idCliente, clientesAsociados]);
@@ -105,11 +91,8 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
   // Función para inicializar desde script externo
   useEffect(() => {
     const handleUserDataUpdate = (userData: UserData) => {
-      console.log('[ChatBubble] Datos recibidos de TMS:', userData);
-      
       // Mapear el rol de TMS a rol de Capin
       const roleMapping = mapTmsRoleToCapin(userData.userRole);
-      console.log('[ChatBubble] Rol mapeado:', roleMapping);
       
       const updatedData = { 
         ...userData,
@@ -123,7 +106,6 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
         updatedData.sessionId = `publico-${Math.random().toString(36).substr(2, 9)}-${Date.now()}`;
       }
       
-      console.log('[ChatBubble] Datos finales procesados:', updatedData);
       setCurrentUserData(prev => ({ ...prev, ...updatedData }));
       setIsOpen(true);
     };
@@ -169,7 +151,6 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
     };
 
   const toggleChat = () => {
-    console.log('[ChatBubble] 🖱️ Click en botón - toggling chat. Estado actual:', isOpen);
     setIsOpen(!isOpen);
   };
 

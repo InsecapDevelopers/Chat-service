@@ -60,17 +60,9 @@ export const RelatorResult = ({ content, onRelatorSelect }: RelatorResultProps) 
                   content.match(/^ID:\s*(\d+)/im); // ID: al inicio de línea como último recurso
   const relatorId = idMatch ? idMatch[1] : null;
 
-  // Procesar el contenido línea por línea para mantener saltos de línea
-  const contentLines = content.split('\n').map((line, lineIndex) => (
-    <React.Fragment key={lineIndex}>
-      {linkifyText(line)}
-      {lineIndex < content.split('\n').length - 1 && <br />}
-    </React.Fragment>
-  ));
-
   return (
     <div className="space-y-2">
-      <div className="text-sm text-gray-600">{contentLines}</div>
+      <div className="text-sm text-gray-600 whitespace-pre-wrap">{linkifyText(content)}</div>
       {relatorId && (
         <Button
           variant="outline"

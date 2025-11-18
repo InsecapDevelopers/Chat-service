@@ -47,16 +47,11 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
 
   // Log de montaje
   useEffect(() => {
-    console.log('[ChatWidget] Componente montado. Estado inicial open =', open);
-    
-    // Verificar que el botón está disponible
+    // Component mounted - check button availability
     queueMicrotask(() => {
       if (btnRef.current) {
-        console.log('[ChatWidget] ✅ Ref del botón establecida:', btnRef.current);
         const computed = window.getComputedStyle(btnRef.current);
-        console.log('[ChatWidget] pointer-events del botón:', computed.pointerEvents);
-      } else {
-        console.warn('[ChatWidget] ⚠️ Ref del botón NO establecida');
+        // Button ready with pointer-events: ${computed.pointerEvents}
       }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -85,7 +80,6 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
     const host = document.getElementById('capin-chat-root');
     if (host) {
       host.setAttribute('data-chat-state', open ? 'open' : 'closed');
-      console.log('[ChatWidget] Estado actualizado:', open ? 'open' : 'closed');
       // Disparar evento personalizado para compatibilidad
       host.dispatchEvent(new CustomEvent('chatStateChange', { 
         detail: { isOpen: open },
@@ -106,23 +100,11 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
             ref={btnRef}
             aria-label="Abrir chat CapinIA"
             onClick={(e) => {
-              console.log('[ChatWidget] ✅ onClick disparado - abriendo chat');
               setOpen(true);
             }}
-            onMouseDown={(e) => {
-              console.log('[ChatWidget] MouseDown en botón', e.button);
-            }}
-            onMouseUp={(e) => {
-              console.log('[ChatWidget] MouseUp en botón', e.button);
-            }}
-            onPointerDown={(e) => {
-              console.log('[ChatWidget] PointerDown en botón', e.pointerType);
-            }}
             onPointerUp={(e) => {
-              console.log('[ChatWidget] ⬆️ PointerUp en botón', e.pointerType);
               // Fallback: si onClick no funciona, usar PointerUp
               if (!open) {
-                console.log('[ChatWidget] 🔄 Fallback: Abriendo desde PointerUp');
                 setOpen(true);
               }
             }}

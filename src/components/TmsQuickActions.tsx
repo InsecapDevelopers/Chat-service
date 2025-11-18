@@ -16,7 +16,7 @@ interface TmsQuickActionsProps {
     source: string;
     intent: string;
     message: string;
-    target?: { rut?: string; nombre?: string };
+    target?: { rut?: string; nombre?: string; codigoComer?: string; codigoCotizacion?: string; pkCotizacion?: string; codigoCurso?: string };
   }) => void;
   currentRole?: string;
   disabled?: boolean;

@@ -92,7 +92,7 @@ export const CostosSearchModal = ({ isOpen, onClose, onSubmit }: CostosSearchMod
             <Input
               id="codigoComer"
               value={codigoComer}
-              onChange={(e) => setCodigoComer(e.target.value)}
+              onChange={(e) => setCodigoComer(e.target.value.toUpperCase())}
               placeholder="CAL229103-1"
               onKeyDown={handleKeyDown}
               className={error ? "border-red-300 focus:border-red-500" : ""}

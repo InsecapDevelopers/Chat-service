@@ -17,16 +17,38 @@ export interface SafeButtonProps extends ButtonProps {
 
 const SafeButton = React.forwardRef<HTMLButtonElement, SafeButtonProps>(
   ({ onClick, onPointerUp, ...props }, ref) => {
+    const clickedRef = React.useRef(false);
+    
+    const handleClick = React.useCallback(
+      (e: React.MouseEvent<HTMLButtonElement>) => {
+        if (clickedRef.current) return;
+        clickedRef.current = true;
+        onClick?.(e);
+        
+        // Reset después de un breve delay
+        setTimeout(() => {
+          clickedRef.current = false;
+        }, 100);
+      },
+      [onClick]
+    );
+
     const handlePointerUp = React.useCallback(
       (e: React.PointerEvent<HTMLButtonElement>) => {
         // Llamar al onPointerUp original si existe
         onPointerUp?.(e);
         
-        // Si onClick no se disparó, llamarlo manualmente desde PointerUp
+        // Solo usar onPointerUp como fallback si onClick no fue llamado
         // (fallback para Shadow DOM donde onClick puede ser bloqueado)
-        if (onClick && !e.defaultPrevented) {
+        if (onClick && !clickedRef.current && !e.defaultPrevented) {
+          clickedRef.current = true;
           // Convertir PointerEvent a MouseEvent para compatibilidad
           onClick(e as unknown as React.MouseEvent<HTMLButtonElement>);
+          
+          // Reset después de un breve delay
+          setTimeout(() => {
+            clickedRef.current = false;
+          }, 100);
         }
       },
       [onClick, onPointerUp]
@@ -35,7 +57,7 @@ const SafeButton = React.forwardRef<HTMLButtonElement, SafeButtonProps>(
     return (
       <Button
         ref={ref}
-        onClick={onClick}
+        onClick={handleClick}
         onPointerUp={handlePointerUp}
         {...props}
         style={{

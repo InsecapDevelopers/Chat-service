@@ -70,7 +70,7 @@ export const R24Modal = ({ isOpen, onClose, onConfirm }: R24ModalProps) => {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCodigoCotizacion(e.target.value);
+    setCodigoCotizacion(e.target.value.toUpperCase());
     if (error) setError(""); // Limpiar error al escribir
   };
 

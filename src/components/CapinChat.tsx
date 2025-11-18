@@ -149,22 +149,17 @@ const validatePayload = (payload: Record<string, unknown>): { valid: boolean; er
     const objects = claims?.objects as unknown[] | undefined;
     if (!objects || objects.length === 0) {
       // ⚠️ Warning pero no error - el backend puede manejarlo sin objects
-      console.warn("⚠️ Intent free_mode sin claims.objects - no habrá enriquecimiento de contexto");
     }
   }
   
   // Source debe ser "quick_action" para botones con intent
   if (payload.intent && payload.intent !== "free_mode" && payload.source !== "quick_action") {
-    console.warn("⚠️ Botón con intent específico sin source=quick_action");
+    // Missing source=quick_action
   }
   
   if (errors.length > 0) {
-    console.error("🚨 VALIDACIÓN DE PAYLOAD FALLÓ:", errors);
-    console.error("📦 Payload:", JSON.stringify(payload, null, 2));
     return { valid: false, errors };
   }
-  
-  console.info("✅ Payload válido:", JSON.stringify(payload, null, 2));
   return { valid: true, errors: [] };
 };
 
@@ -181,18 +176,6 @@ export const CapinChat = ({
   initialIdCliente,
   clientesAsociados,
 }: CapinChatProps) => {
-  console.log('[CapinChat] ========== PROPS RECIBIDAS EN CAPINCHAT ==========');
-  console.log('[CapinChat] canSwitchRole:', canSwitchRole);
-  console.log('[CapinChat] tmsOriginalRole:', tmsOriginalRole);
-  console.log('[CapinChat] initialIdCliente:', initialIdCliente);
-  console.log('[CapinChat] clientesAsociados:', clientesAsociados);
-  if (clientesAsociados && clientesAsociados.length > 0) {
-    console.log('[CapinChat] Total clientes asociados:', clientesAsociados.length);
-    clientesAsociados.forEach((c, i) => {
-      console.log(`[CapinChat]   ${i + 1}. ${c.nombre} (${c.idCliente})`);
-    });
-  }
-  console.log('[CapinChat] =======================================================');
   
   // Hook para manejo de sesiones
   const { sessionId, resetSession } = useSessionId();
@@ -251,13 +234,6 @@ export const CapinChat = ({
   const isTmsRole = selectedRole === 'tms' || selectedRole.startsWith('tms:');
   
   // Debug en desarrollo - DESPUÉS de las declaraciones
-  if (import.meta.env.DEV) {
-    console.log('🔧 [DEV MODE] User:', user);
-    console.log('🔧 [DEV MODE] EffectiveUser:', effectiveUser);
-    console.log('🔧 [DEV MODE] InitialRole:', initialRole);
-    console.log('🔧 [DEV MODE] SelectedRole:', selectedRole);
-    console.log('🔧 [DEV MODE] ShowContactModal:', showContactModal);
-  }
   
   // En modo desarrollo, inicializar con datos del usuario admin
   const [rut, setRut] = useState<string>(import.meta.env.DEV ? "21.176.561-5" : "");
@@ -304,17 +280,13 @@ export const CapinChat = ({
       const payload = customEvent.detail;
       
       if (!payload || !payload.user) {
-        console.warn('[CapinChat] Auto-boot event sin payload válido');
         return;
       }
 
       const storageKey = `capin:auto_boot_processed:${payload.user.session_id}`;
       if (sessionStorage.getItem(storageKey) === '1') {
-        console.log('[CapinChat] Auto-boot ya procesado en esta sesión');
         return;
       }
-
-      console.log('[CapinChat] Procesando auto-boot event:', payload);
       
       // Marcar como procesado para no hacerlo dos veces
       sessionStorage.setItem(storageKey, '1');
@@ -329,9 +301,8 @@ export const CapinChat = ({
         try {
           // Validar que handleSendMessage está disponible en el contexto
           const messageToSend = JSON.stringify(payload);
-          console.log('[CapinChat] Enviando auto-boot message:', messageToSend);
         } catch (e) {
-          console.warn('[CapinChat] Error al procesar auto-boot:', e);
+          // Error processing auto-boot
         }
       }, 500);
     };
@@ -400,18 +371,7 @@ export const CapinChat = ({
   const canPrev = hasPagination && page > 1;
   const canNext = hasPagination && page < totalPages;
 
-  // ADD: Logging para debugging de paginación
-  useEffect(() => {
-    if (selectedRole === "cliente" && (page > 0 || pageSize > 0 || total > 0)) {
-      console.info('[Pagination Calc]', {
-        page,
-        pageSize,
-        total,
-        totalPages,
-        hasPagination
-      });
-    }
-  }, [page, pageSize, total, totalPages, hasPagination, selectedRole]);
+  // Pagination debugging removed
 
   useEffect(() => {
     if (inputRef.current && (canPrev || canNext)) {
@@ -612,9 +572,6 @@ export const CapinChat = ({
     const effectiveIntent = isFromQuickAction && payloadIntent ? payloadIntent : "free_mode";
     
     const modeCandidate = effectiveIntent && effectiveIntent !== "free_mode" ? "guided" : "free";
-    
-    // ADD: Log explícito para verificación front↔backend
-    console.info(`[PAYLOAD VERIFICATION] modeCandidate: ${modeCandidate}, source: ${payloadSource}, intent: ${effectiveIntent || 'undefined'}, role: ${finalRole}, session_id: ${sessionId}, contexts: ${contexts?.length || 0}`);
 
     // ✅ Construir payload completo
     const payload = {
@@ -798,6 +755,10 @@ export const CapinChat = ({
         if (payload.target?.codigoComer) {
           displayMessage = `Consultar costos para: ${payload.target.codigoComer}`;
         }
+      } else if (payload.intent === "tms.get_costo_estimado") {
+        if (payload.target?.codigoCurso) {
+          displayMessage = `💰 Estimar costos de elementos prácticos para el curso: ${payload.target.codigoCurso}`;
+        }
       } else if (payload.intent === "tms.get_r11") {
         if (payload.target?.codigoCurso) {
           displayMessage = `Consultar R11 del curso: ${payload.target.codigoCurso}`;
@@ -820,9 +781,6 @@ export const CapinChat = ({
       setMessages((prev) => [...prev, userMessage]);
 
       setIsTyping(true);
-
-      // Log para debugging - payload exacto
-      console.info('[Additional Action payload]', payload);
 
       // Construir claims para cliente
       // Construir claims para cliente si aplica
@@ -1174,14 +1132,10 @@ export const CapinChat = ({
       }
 
       const data = await response.json();
-      console.info('[Relator Intent Response]', data);
-      console.info('[Relator Intent Response - Meta]', data.meta);
-      console.info('[Relator Intent Response - Pagination]', data.meta?.pagination);
       
       // Actualizar metadata de paginación si existe
       if (data.meta) {
         setLastMeta(data.meta);
-        console.info('[Updated lastMeta]', data.meta);
       }
       
       // Procesar respuesta
@@ -1282,25 +1236,17 @@ export const CapinChat = ({
         throw new Error(`Payload inválido: ${validation.errors.join(', ')}`);
       }
       // Enviar al API endpoint
-      console.info('[Cliente Intent] Enviando payload a:', apiEndpoint);
       const response = await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(fullPayload),
       });
 
-      console.info('[Cliente Intent] Response status:', response.status, response.statusText);
-
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      console.info('[Cliente Intent] Parsing JSON response...');
       const data: ExtendedChatApiResponse = await response.json();
-
-      console.info('[Cliente Intent Response Raw]', JSON.stringify(data, null, 2));
-      console.info('[Cliente Intent] Response keys:', Object.keys(data));
-      console.info('[Cliente Intent] Has pagination field:', !!data.pagination);
 
       // Guardar metadata para paginación (soportar tanto "metadata" como "meta")
       const responseMetadata = data.metadata || data.meta;
@@ -1312,16 +1258,8 @@ export const CapinChat = ({
         ...(data.pagination ? { pagination: data.pagination } : {})
       };
       
-      console.info('[Cliente Intent Pagination Check]', {
-        hasMetadata: !!responseMetadata,
-        hasPaginationField: !!data.pagination,
-        metaToStore: metaToStore,
-        paginationValue: data.pagination
-      });
-      
       if (Object.keys(metaToStore).length > 0) {
         setLastMeta(metaToStore);
-        console.info('[Cliente Intent Metadata - Stored]', metaToStore);
       }
 
       // Guardar el último intent para paginación
@@ -1771,10 +1709,6 @@ export const CapinChat = ({
     }
     return null;
   }, [messages]);
-
-  if (import.meta.env.DEV) {
-    console.log('🎨 [DEV MODE] Rendering CapinChat...');
-  }
 
   return (
     <div

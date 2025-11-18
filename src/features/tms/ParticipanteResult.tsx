@@ -122,16 +122,9 @@ export const ParticipanteResult = ({ content, onParticipanteSelect }: Participan
   }
   
   // Fallback: mostrar contenido tal cual
-  const contentLines = content.split('\n').map((line, lineIndex) => (
-    <React.Fragment key={lineIndex}>
-      {linkifyText(line)}
-      {lineIndex < content.split('\n').length - 1 && <br />}
-    </React.Fragment>
-  ));
-
   return (
     <div className="space-y-2">
-      <div className="text-sm text-gray-600">{contentLines}</div>
+      <div className="text-sm text-gray-600 whitespace-pre-wrap">{linkifyText(content)}</div>
     </div>
   );
 };
@@ -190,7 +183,7 @@ const SingleParticipanteCard = ({ data, fullContent }: {
           {data.otherInfo.length > 0 && (
             <div className="space-y-1 pt-2 border-t border-cyan-100">
               {data.otherInfo.map((info, idx) => (
-                <div key={idx} className="text-sm text-gray-600">
+                <div key={idx} className="text-sm text-gray-600 whitespace-pre-wrap">
                   {linkifyText(info)}
                 </div>
               ))}

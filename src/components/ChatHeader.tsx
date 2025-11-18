@@ -316,17 +316,19 @@ export const ChatHeader = ({
           )}
           
           {/* Botón de limpiar conversación - SIEMPRE VISIBLE */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onClear}
-            disabled={isResettingSession}
-            className="h-7 px-2 bg-white/10 hover:bg-white/20 border-white/30 text-white disabled:opacity-50"
-            title="Limpiar conversación"
-          >
-            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          </Button>
+          {onClear && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onClear}
+              disabled={isResettingSession}
+              className="h-7 px-2 bg-white/10 hover:bg-white/20 border-white/30 text-white disabled:opacity-50"
+              title="Limpiar conversación"
+            >
+              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </Button>
+          )}
 
           {/* Botón de cerrar - SIEMPRE VISIBLE */}
           <Button

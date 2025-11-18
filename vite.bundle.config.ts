@@ -2,9 +2,24 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
+// Plugin para eliminar console.log en producción
+const removeConsolePlugin = () => ({
+  name: 'remove-console',
+  transform(code: string, id: string) {
+    if (id.includes('node_modules')) return null;
+    
+    // Eliminar console.log, console.info, console.debug, console.warn (preservar console.error)
+    const cleaned = code
+      .replace(/console\.(log|info|debug|warn)\([^)]*\);?/g, '')
+      .replace(/console\.(log|info|debug|warn)`[^`]*`;?/g, '');
+    
+    return { code: cleaned, map: null };
+  }
+});
+
 // Configuración específica para el bundle del ChatBubble
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), removeConsolePlugin()],
   css: {
     postcss: './postcss.bundle.config.js'
   },

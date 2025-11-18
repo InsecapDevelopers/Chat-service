@@ -7,6 +7,7 @@ import { ConsultarR11QuickAction } from "./ConsultarR11QuickAction";
 import { MaterialQuickAction } from "./MaterialQuickAction";
 import { AprobadosQuickAction } from "./AprobadosQuickAction";
 import { R24QuickAction } from "./R24QuickAction";
+import { EstimarCostosQuickAction } from "./EstimarCostosQuickAction";
 import { actionsRegistry } from "./ActionsRegistry";
 
 interface AdditionalTmsActionsProps {
@@ -15,7 +16,7 @@ interface AdditionalTmsActionsProps {
     source: string;
     intent: string;
     message: string;
-    target?: { rut?: string; nombre?: string; codigoComer?: string; codigoCotizacion?: string; pkCotizacion?: string };
+    target?: { rut?: string; nombre?: string; codigoComer?: string; codigoCotizacion?: string; pkCotizacion?: string; codigoCurso?: string };
   }) => void;
   onActionClick: (action: 'R11' | 'R12' | 'R61' | 'BLOQUES') => void;
   disabled?: boolean;
@@ -42,6 +43,9 @@ export const AdditionalTmsActions = ({
     actionsRegistry.unregister("material-curso");
     actionsRegistry.unregister("aprobados-postcurso");
     actionsRegistry.unregister("r24-postcurso");
+    actionsRegistry.unregister("estimar-costos-comercial");
+    actionsRegistry.unregister("estimar-costos-logistica");
+    actionsRegistry.unregister("estimar-costos-diseno");
 
     // Solo registrar si es el rol correcto
     if (currentRole === "tms:logistica" || currentRole === "tms:diseno&desarrollo" || currentRole === "tms:postcurso" || currentRole === "tms:comercial") {
@@ -60,7 +64,7 @@ export const AdditionalTmsActions = ({
 
       actionsRegistry.register(relatorAction);
       
-      // Solo registrar costos, consultar R11 y material para logística
+      // Solo registrar costos, consultar R11, material y estimar costos para logística
       if (currentRole === "tms:logistica") {
         const costosAction = {
           id: "costos-search",
@@ -100,12 +104,26 @@ export const AdditionalTmsActions = ({
           order: 4
         };
 
+        const estimarCostosAction = {
+          id: "estimar-costos-logistica",
+          component: (
+            <EstimarCostosQuickAction
+              onActionSend={onActionSend}
+              disabled={disabled}
+              currentRole={currentRole}
+            />
+          ),
+          roles: ["tms:logistica"],
+          order: 5
+        };
+
         actionsRegistry.register(costosAction);
         actionsRegistry.register(consultarR11Action);
         actionsRegistry.register(materialAction);
+        actionsRegistry.register(estimarCostosAction);
       }
 
-      // Registrar material para diseño&desarrollo
+      // Registrar material y estimar costos para diseño&desarrollo
       if (currentRole === "tms:diseno&desarrollo") {
         const materialAction = {
           id: "material-curso",
@@ -120,7 +138,21 @@ export const AdditionalTmsActions = ({
           order: 2
         };
 
+        const estimarCostosAction = {
+          id: "estimar-costos-diseno",
+          component: (
+            <EstimarCostosQuickAction
+              onActionSend={onActionSend}
+              disabled={disabled}
+              currentRole={currentRole}
+            />
+          ),
+          roles: ["tms:diseno&desarrollo"],
+          order: 3
+        };
+
         actionsRegistry.register(materialAction);
+        actionsRegistry.register(estimarCostosAction);
       }
 
       // Registrar acciones para postcurso
@@ -168,6 +200,24 @@ export const AdditionalTmsActions = ({
         actionsRegistry.register(r24Action);
         actionsRegistry.register(participanteAction);
       }
+
+      // Registrar acciones para comercial
+      if (currentRole === "tms:comercial") {
+        const estimarCostosAction = {
+          id: "estimar-costos-comercial",
+          component: (
+            <EstimarCostosQuickAction
+              onActionSend={onActionSend}
+              disabled={disabled}
+              currentRole={currentRole}
+            />
+          ),
+          roles: ["tms:comercial"],
+          order: 2
+        };
+
+        actionsRegistry.register(estimarCostosAction);
+      }
     }
 
     // Forzar re-render
@@ -183,6 +233,9 @@ export const AdditionalTmsActions = ({
       actionsRegistry.unregister("material-curso");
       actionsRegistry.unregister("aprobados-postcurso");
       actionsRegistry.unregister("r24-postcurso");
+      actionsRegistry.unregister("estimar-costos-comercial");
+      actionsRegistry.unregister("estimar-costos-logistica");
+      actionsRegistry.unregister("estimar-costos-diseno");
     };
   }, [onActionSend, onActionClick, disabled, currentRole]);
 

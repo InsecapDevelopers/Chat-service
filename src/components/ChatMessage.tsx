@@ -52,41 +52,44 @@ export const ChatMessage = ({ message, onRelatorSelect, onParticipanteSelect }: 
   };
 
   const isUser = message.sender === "user";
+  
+  // Remover formato markdown bold (**) de mensajes del asistente
+  const processedText = isUser ? message.text : message.text.replace(/\*\*/g, '');
 
   // Detectar si el contenido del asistente incluye participantes aprobados con R23 (PRIMERO - más específico)
   const isAprobadosContent = !isUser && (
-    /PARTICIPANTES APROBADOS/i.test(message.text) ||
-    (message.text.includes("participante(s) aprobado(s)") && /R23/i.test(message.text)) ||
-    (/participante.*aprobado/i.test(message.text) && /R23/i.test(message.text))
+    /PARTICIPANTES APROBADOS/i.test(processedText) ||
+    (processedText.includes("participante(s) aprobado(s)") && /R23/i.test(processedText)) ||
+    (/participante.*aprobado/i.test(processedText) && /R23/i.test(processedText))
   );
 
   // Detectar si el contenido del asistente incluye información de relatores
   const isRelatorContent = !isUser && (
-    message.text.includes("Relator encontrado") ||
-    message.text.includes("Relatores encontrados") ||
-    /Se encontraron? \d+ relatores?/i.test(message.text) ||
-    (message.text.includes("múltiples coincidencias") && message.text.toLowerCase().includes("relator")) ||
-    (message.text.includes("Encontré varias coincidencias") && message.text.toLowerCase().includes("relator"))
+    processedText.includes("Relator encontrado") ||
+    processedText.includes("Relatores encontrados") ||
+    /Se encontraron? \d+ relatores?/i.test(processedText) ||
+    (processedText.includes("múltiples coincidencias") && processedText.toLowerCase().includes("relator")) ||
+    (processedText.includes("Encontré varias coincidencias") && processedText.toLowerCase().includes("relator"))
   );
 
   // Detectar si el contenido del asistente incluye información de participantes (EXCLUIR aprobados)
   const isParticipanteContent = !isUser && !isAprobadosContent && (
-    message.text.includes("Participante encontrado") ||
-    (message.text.includes("Participantes encontrados") && !message.text.includes("APROBADOS")) ||
-    /Se encontraron \d+ participante/i.test(message.text) ||
-    (message.text.includes("coinciden con") && message.text.toLowerCase().includes("participante")) ||
-    (message.text.includes("múltiples coincidencias") && message.text.toLowerCase().includes("participante") && !message.text.toLowerCase().includes("aprobado")) ||
-    (message.text.includes("Encontré varias coincidencias") && message.text.toLowerCase().includes("participante") && !message.text.toLowerCase().includes("aprobado"))
+    processedText.includes("Participante encontrado") ||
+    (processedText.includes("Participantes encontrados") && !processedText.includes("APROBADOS")) ||
+    /Se encontraron \d+ participante/i.test(processedText) ||
+    (processedText.includes("coinciden con") && processedText.toLowerCase().includes("participante")) ||
+    (processedText.includes("múltiples coincidencias") && processedText.toLowerCase().includes("participante") && !processedText.toLowerCase().includes("aprobado")) ||
+    (processedText.includes("Encontré varias coincidencias") && processedText.toLowerCase().includes("participante") && !processedText.toLowerCase().includes("aprobado"))
   );
 
   // Detectar si el contenido del asistente incluye información de costos
   const isCostosContent = !isUser && (
-    message.text.includes("COSTOS") ||
-    message.text.includes("COSTO TOTAL") ||
-    message.text.includes("PRECIO VENTA") ||
-    message.text.includes("Honorarios") ||
-    message.text.includes("===") ||
-    message.text.includes("Costos by codigoComer")
+    processedText.includes("COSTOS") ||
+    processedText.includes("COSTO TOTAL") ||
+    processedText.includes("PRECIO VENTA") ||
+    processedText.includes("Honorarios") ||
+    processedText.includes("===") ||
+    processedText.includes("Costos by codigoComer")
   );
 
   // Si es contenido de participantes aprobados, usar AprobadosResult (PRIMERO porque es más específico)
@@ -100,7 +103,7 @@ export const ChatMessage = ({ message, onRelatorSelect, onParticipanteSelect }: 
 
         <div className="max-w-[85%] sm:max-w-[80%] md:max-w-[75%] text-left min-w-0">
           <div className="inline-block w-full p-2 sm:p-3 rounded-2xl shadow-bubble transition-all duration-300 hover:shadow-lg bg-chat-assistant-bg text-chat-assistant-text border-2 border-chat-assistant-border rounded-bl-md">
-            <AprobadosResult content={message.text} onParticipanteSelect={onParticipanteSelect} />
+            <AprobadosResult content={processedText} onParticipanteSelect={onParticipanteSelect} />
           </div>
 
           <div className="flex items-center gap-2 mt-1 justify-start">
@@ -127,7 +130,7 @@ export const ChatMessage = ({ message, onRelatorSelect, onParticipanteSelect }: 
 
         <div className="max-w-[80%] text-left">
           <div className="inline-block p-3 rounded-2xl shadow-bubble transition-all duration-300 hover:shadow-lg bg-chat-assistant-bg text-chat-assistant-text border-2 border-chat-assistant-border rounded-bl-md">
-            <ParticipanteResult content={message.text} onParticipanteSelect={onParticipanteSelect} />
+            <ParticipanteResult content={processedText} onParticipanteSelect={onParticipanteSelect} />
           </div>
 
           <div className="flex items-center gap-2 mt-1 justify-start">
@@ -154,7 +157,7 @@ export const ChatMessage = ({ message, onRelatorSelect, onParticipanteSelect }: 
 
         <div className="max-w-[80%] text-left">
           <div className="inline-block p-3 rounded-2xl shadow-bubble transition-all duration-300 hover:shadow-lg bg-chat-assistant-bg text-chat-assistant-text border-2 border-chat-assistant-border rounded-bl-md">
-            <RelatorResult content={message.text} onRelatorSelect={onRelatorSelect} />
+            <RelatorResult content={processedText} onRelatorSelect={onRelatorSelect} />
           </div>
 
           <div className="flex items-center gap-2 mt-1 justify-start">
@@ -181,7 +184,7 @@ export const ChatMessage = ({ message, onRelatorSelect, onParticipanteSelect }: 
 
         <div className="max-w-[80%] text-left">
           <div className="inline-block p-3 rounded-2xl shadow-bubble transition-all duration-300 hover:shadow-lg bg-chat-assistant-bg text-chat-assistant-text border-2 border-chat-assistant-border rounded-bl-md">
-            <CostosResult content={message.text} />
+            <CostosResult content={processedText} />
           </div>
 
           <div className="flex items-center gap-2 mt-1 justify-start">
@@ -200,7 +203,7 @@ export const ChatMessage = ({ message, onRelatorSelect, onParticipanteSelect }: 
   // Regex para detectar URLs (capturando las coincidencias)
   const linkRegex = /(https?:\/\/[^\s]+)/g;
   // Dividimos el texto en [texto, url1, texto, url2, ...]
-  const parts = message.text.split(linkRegex);
+  const parts = processedText.split(linkRegex);
 
   // Quita puntuación de cierre sobrante sin romper paréntesis válidos
   const splitUrlAndTrailing = (raw: string) => {
