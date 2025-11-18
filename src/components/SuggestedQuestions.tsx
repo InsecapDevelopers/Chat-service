@@ -179,7 +179,7 @@ export const SuggestedQuestions = ({
         <Accordion type="single" collapsible defaultValue={isMobile ? undefined : "sug"}>
           <AccordionItem value="sug" className="border-b-0">
             <AccordionTrigger 
-              className="px-4 pt-3 pb-2 text-xs text-muted-foreground hover:no-underline"
+              className="px-4 pt-3 pb-2 text-xs font-semibold text-blue-600 hover:no-underline hover:text-blue-700"
               aria-label={`Mostrar/ocultar ${titleText.toLowerCase()}`}
             >
               {titleText}
@@ -196,7 +196,7 @@ export const SuggestedQuestions = ({
                       size="sm"
                       onClick={() => handleQuestionClick(q)}
                       disabled={disabled}
-                      className="rounded-full disabled:opacity-50 disabled:cursor-not-allowed justify-start gap-2 w-full"
+                      className="rounded-full disabled:opacity-50 disabled:cursor-not-allowed justify-start gap-2 w-full bg-blue-500 hover:bg-blue-600 text-white border-blue-600 shadow-md"
                     >
                       {Icon && <Icon className="h-4 w-4 flex-shrink-0" />}
                       <span className="truncate">{q.label}</span>

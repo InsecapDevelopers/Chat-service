@@ -283,10 +283,10 @@ export const ChatHeader = ({
                     size="sm"
                     onClick={onComercialTurnoRequest}
                     disabled={isResettingSession}
-                    className="h-6 w-6 sm:h-7 sm:w-7 p-0 hover:bg-white/20 text-white/80 hover:text-white disabled:opacity-50 rounded-full"
+                    className="h-7 w-7 sm:h-8 sm:w-8 p-0 bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 rounded-full shadow-lg"
                     title="Consultar comercial de turno"
                   >
-                    <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <HelpCircle className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-xs">
