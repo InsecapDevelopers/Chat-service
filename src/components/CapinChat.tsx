@@ -768,7 +768,7 @@ export const CapinChat = ({
           displayMessage = `Consultar material del curso: ${payload.target.codigoComer}`;
         }
       } else if (payload.intent === "publico.get_comercial_turno") {
-        displayMessage = "¿Quién es el comercial de turno?";
+        displayMessage = "Ayuda";
       }
 
       // Agregar mensaje del usuario al chat
@@ -1344,10 +1344,26 @@ export const CapinChat = ({
     const payload = {
       source: "quick_action",
       intent: "publico.get_comercial_turno",
-      message: "¿Quién es el comercial de turno?",
+      message: "Ayuda",
     };
     
     // Enviar búsqueda automática usando handleAdditionalActionSend
+    await handleAdditionalActionSend(payload);
+  };
+
+  // Handler para intents de publico (usado por SuggestedQuestions)
+  const handlePublicoIntentRequest = async (intent: string, label: string) => {
+    // Construir payload según el intent
+    const payload = {
+      source: "quick_action" as const,
+      intent: intent,
+      message: label,
+      role: selectedRole,
+      session_id: sessionId,
+      tenantId: "insecap",
+    };
+
+    // handleAdditionalActionSend ya agrega el mensaje del usuario y maneja todo
     await handleAdditionalActionSend(payload);
   };
 
@@ -1765,8 +1781,8 @@ export const CapinChat = ({
         />
       )}
 
-      {/* Sugeridas solo para relator y cliente (alumno usa Quick Actions) */}
-      {(selectedRole === "relator" || selectedRole === "cliente") && (
+      {/* Sugeridas solo para relator, cliente y publico (alumno usa Quick Actions) */}
+      {(selectedRole === "relator" || selectedRole === "cliente" || selectedRole === "publico") && (
         <SuggestedQuestions 
           onAsk={handleSendMessage} 
           role={selectedRole} 
@@ -1776,6 +1792,7 @@ export const CapinChat = ({
           onMaterialRequest={selectedRole === "relator" ? handleMaterialRequest : undefined}
           onClienteIntentRequest={selectedRole === "cliente" ? handleClienteIntentRequest : undefined}
           onRelatorIntentRequest={selectedRole === "relator" ? handleRelatorIntentRequest : undefined}
+          onPublicoIntentRequest={selectedRole === "publico" ? handlePublicoIntentRequest : undefined}
         />
       )}
 

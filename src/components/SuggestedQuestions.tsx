@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/accordion";
 import { MaterialCursoModal } from "./MaterialCursoModal";
 import { DiplomaModal } from "./DiplomaModal";
-import { BookOpen, Calendar, FileText, GraduationCap, Package, ListChecks, Award } from "lucide-react";
+import { BookOpen, Calendar, FileText, GraduationCap, Package, ListChecks, Award, UserCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 type QuestionItem = {
@@ -29,6 +29,7 @@ type Props = {
   onMaterialRequest?: (codigoCurso: string) => void;
   onClienteIntentRequest?: (intent: string, label: string) => void;
   onRelatorIntentRequest?: (intent: string, label: string) => void;
+  onPublicoIntentRequest?: (intent: string, label: string) => void;
 };
 
 const alumnoQuestions = [
@@ -96,6 +97,16 @@ const clienteQuestions: QuestionItem[] = [
   },
 ];
 
+const publicoQuestions: QuestionItem[] = [
+  {
+    label: "Ayuda",
+    prompt: "__INTENT_publico.get_comercial_turno__",
+    isIntent: true,
+    intent: "publico.get_comercial_turno",
+    icon: UserCircle,
+  },
+];
+
 export const SuggestedQuestions = ({ 
   onAsk, 
   role, 
@@ -104,12 +115,13 @@ export const SuggestedQuestions = ({
   onDiplomaRequest,
   onMaterialRequest,
   onClienteIntentRequest,
-  onRelatorIntentRequest
+  onRelatorIntentRequest,
+  onPublicoIntentRequest
 }: Props) => {
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
   const [isDiplomaModalOpen, setIsDiplomaModalOpen] = useState(false);
 
-  if (role !== "alumno" && role !== "relator" && role !== "cliente") return null;
+  if (role !== "alumno" && role !== "relator" && role !== "cliente" && role !== "publico") return null;
 
   let questions;
   let titleText;
@@ -123,6 +135,9 @@ export const SuggestedQuestions = ({
   } else if (role === "cliente") {
     questions = clienteQuestions;
     titleText = "Consultas de cliente";
+  } else if (role === "publico") {
+    questions = publicoQuestions;
+    titleText = "Preguntas frecuentes";
   }
 
   const handleQuestionClick = (q: QuestionItem) => {
@@ -138,6 +153,9 @@ export const SuggestedQuestions = ({
     } else if (q.isIntent && q.intent && onClienteIntentRequest && role === "cliente") {
       // Si es un intent de cliente, llamar al handler específico
       onClienteIntentRequest(q.intent, q.label);
+    } else if (q.isIntent && q.intent && onPublicoIntentRequest && role === "publico") {
+      // Si es un intent de publico, llamar al handler específico
+      onPublicoIntentRequest(q.intent, q.label);
     } else {
       onAsk(q.label, q.prompt);
     }
