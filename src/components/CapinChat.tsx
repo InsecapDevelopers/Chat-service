@@ -1762,15 +1762,25 @@ export const CapinChat = ({
       />
 
       {/* ADD: Acciones TMS - Solo para roles tms:* */}
-      {isTmsRole && (
-        <TmsQuickActions 
-          onActionClick={handleTmsActionClick}
-          onAdditionalActionSend={handleAdditionalActionSend}
-          currentRole={selectedRole === "tms" ? `tms:${tmsSubrol}` : selectedRole}
-          disabled={isTyping || isResettingSession}
-          isMobile={isMobile}
-        />
-      )}
+      {(() => {
+        const finalRole = selectedRole === "tms" ? `tms:${tmsSubrol}` : selectedRole;
+        console.log('[CapinChat DEBUG] Renderizando TmsQuickActions:', {
+          selectedRole,
+          tmsSubrol,
+          finalRole,
+          isTmsRole,
+          shouldRender: isTmsRole
+        });
+        return isTmsRole && (
+          <TmsQuickActions 
+            onActionClick={handleTmsActionClick}
+            onAdditionalActionSend={handleAdditionalActionSend}
+            currentRole={finalRole}
+            disabled={isTyping || isResettingSession}
+            isMobile={isMobile}
+          />
+        );
+      })()}
 
       {/* ADD: Acciones Alumno - Reemplaza preguntas sugeridas para alumno */}
       {selectedRole === "alumno" && (
@@ -1781,7 +1791,7 @@ export const CapinChat = ({
         />
       )}
 
-      {/* Sugeridas solo para relator, cliente y publico (alumno usa Quick Actions) */}
+      {/* Sugeridas SOLO para relator, cliente y publico (TMS usa TmsQuickActions) */}
       {(selectedRole === "relator" || selectedRole === "cliente" || selectedRole === "publico") && (
         <SuggestedQuestions 
           onAsk={handleSendMessage} 

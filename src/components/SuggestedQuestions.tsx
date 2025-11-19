@@ -107,7 +107,128 @@ const publicoQuestions: QuestionItem[] = [
   },
 ];
 
-export const SuggestedQuestions = ({ 
+const tmsQuestions: QuestionItem[] = [
+  {
+    label: "Relator",
+    prompt: "Necesito información de un relator",
+    icon: UserCircle,
+  },
+  {
+    label: "Estimar Costos",
+    prompt: "Quiero estimar los costos de un curso",
+    icon: ListChecks,
+  },
+];
+
+const postcursoQuestions: QuestionItem[] = [
+  {
+    label: "Relator",
+    prompt: "Necesito información de un relator",
+    icon: UserCircle,
+  },
+  {
+    label: "Aprobados",
+    prompt: "Quiero ver la lista de participantes aprobados",
+    icon: ListChecks,
+  },
+  {
+    label: "R24",
+    prompt: "Necesito acceder a la evaluación post-curso",
+    icon: FileText,
+  },
+  {
+    label: "Participante",
+    prompt: "Quiero información de un participante específico",
+    icon: UserCircle,
+  },
+];
+
+const comercialQuestions: QuestionItem[] = [
+  {
+    label: "Relator",
+    prompt: "Necesito información de un relator",
+    icon: UserCircle,
+  },
+  {
+    label: "Búsqueda de Costos",
+    prompt: "Quiero consultar costos de una comercialización",
+    icon: Package,
+  },
+  {
+    label: "Estimar Costos",
+    prompt: "Quiero estimar los costos de un curso",
+    icon: ListChecks,
+  },
+];
+
+const logisticaQuestions: QuestionItem[] = [
+  {
+    label: "Relator",
+    prompt: "Necesito información de un relator",
+    icon: UserCircle,
+  },
+  {
+    label: "Costos",
+    prompt: "Quiero consultar costos de un curso",
+    icon: Package,
+  },
+  {
+    label: "Consultar R11",
+    prompt: "Necesito ver la información técnica del curso",
+    icon: FileText,
+  },
+  {
+    label: "Recurso de a...",
+    prompt: "Quiero acceder a los recursos de aprendizaje",
+    icon: BookOpen,
+  },
+  {
+    label: "Estimar Costos",
+    prompt: "Quiero estimar los costos de un curso",
+    icon: ListChecks,
+  },
+];
+
+const disenoQuestions: QuestionItem[] = [
+  {
+    label: "Relator",
+    prompt: "Necesito información de un relator",
+    icon: UserCircle,
+  },
+  {
+    label: "Recurso de a...",
+    prompt: "Quiero acceder a los recursos de aprendizaje",
+    icon: BookOpen,
+  },
+  {
+    label: "Estimar Costos",
+    prompt: "Quiero estimar los costos de un curso",
+    icon: ListChecks,
+  },
+];
+
+const facturacionQuestions: QuestionItem[] = [
+  {
+    label: "Consultas de Facturación",
+    prompt: "Tengo una consulta relacionada con facturación",
+    icon: FileText,
+  },
+];
+
+const coordinadorQuestions: QuestionItem[] = [
+  {
+    label: "Relator",
+    prompt: "Necesito información de un relator",
+    icon: UserCircle,
+  },
+  {
+    label: "Estimar Costos",
+    prompt: "Quiero estimar los costos de un curso",
+    icon: ListChecks,
+  },
+];
+
+export const SuggestedQuestions = ({
   onAsk, 
   role, 
   isMobile = false, 
@@ -121,11 +242,16 @@ export const SuggestedQuestions = ({
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
   const [isDiplomaModalOpen, setIsDiplomaModalOpen] = useState(false);
 
-  if (role !== "alumno" && role !== "relator" && role !== "cliente" && role !== "publico") return null;
-
-  let questions;
-  let titleText;
+  // Validar rol: acepta todos los roles conocidos
+  const isTmsRole = role === "tms" || (typeof role === 'string' && role.startsWith('tms'));
+  const isValidRole = role === "alumno" || role === "relator" || role === "cliente" || role === "publico" || isTmsRole;
   
+  if (!isValidRole) return null;
+
+  let questions: QuestionItem[] = [];
+  let titleText = "";
+  
+  // Asignar preguntas según el rol
   if (role === "alumno") {
     questions = alumnoQuestions;
     titleText = "Preguntas rápidas";
@@ -138,7 +264,32 @@ export const SuggestedQuestions = ({
   } else if (role === "publico") {
     questions = publicoQuestions;
     titleText = "Preguntas frecuentes";
+  } else if (role === "tms:postcurso" || role === "tms:post-curso") {
+    questions = postcursoQuestions;
+    titleText = "Consultas Post-Curso";
+  } else if (role === "tms:comercial") {
+    questions = comercialQuestions;
+    titleText = "Consultas de Comercial";
+  } else if (role === "tms:logistica") {
+    questions = logisticaQuestions;
+    titleText = "Consultas de Logística";
+  } else if (role === "tms:diseno&desarrollo" || role === "tms:diseno") {
+    questions = disenoQuestions;
+    titleText = "Consultas de Diseño";
+  } else if (role === "tms:facturacion") {
+    questions = facturacionQuestions;
+    titleText = "Consultas de Facturación";
+  } else if (role === "tms:coordinador" || role === "tms") {
+    questions = coordinadorQuestions;
+    titleText = "Preguntas frecuentes TMS";
+  } else if (isTmsRole) {
+    // Fallback para cualquier otro rol TMS desconocido
+    questions = tmsQuestions;
+    titleText = "Preguntas frecuentes TMS";
   }
+
+  // Si no hay preguntas asignadas, no renderizar
+  if (!questions || questions.length === 0) return null;
 
   const handleQuestionClick = (q: QuestionItem) => {
     // Si es el botón de Material para relator, abrir modal
@@ -176,7 +327,7 @@ export const SuggestedQuestions = ({
   return (
     <>
       <div className="border-b bg-background/70">
-        <Accordion type="single" collapsible defaultValue={isMobile ? undefined : "sug"}>
+        <Accordion type="single" collapsible defaultValue="sug">
           <AccordionItem value="sug" className="border-b-0">
             <AccordionTrigger 
               className="px-4 pt-3 pb-2 text-xs font-semibold text-blue-600 hover:no-underline hover:text-blue-700"

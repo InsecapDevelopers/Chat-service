@@ -37,6 +37,18 @@ export const TmsQuickActions = ({
   const isComercial = currentRole === "tms:comercial";
   const shouldHideOriginalActions = isLogistica || isDisenoDev || isPostcurso || isComercial;
   
+  console.log('[TmsQuickActions DEBUG] Renderizando con:', {
+    currentRole,
+    isLogistica,
+    isDisenoDev,
+    isPostcurso,
+    isComercial,
+    shouldHideOriginalActions,
+    hasAdditionalActionSend: !!onAdditionalActionSend,
+    disabled,
+    isMobile
+  });
+  
   const actions = [
     {
       type: 'R11' as TmsActionType,
@@ -70,10 +82,10 @@ export const TmsQuickActions = ({
 
   return (
     <div className="border-b bg-background/70">
-      <Accordion type="single" collapsible defaultValue={isMobile ? undefined : "tms"}>
+      <Accordion type="single" collapsible defaultValue="tms">
         <AccordionItem value="tms" className="border-b-0">
           <AccordionTrigger 
-            className="px-4 pt-3 pb-2 text-xs text-muted-foreground hover:no-underline"
+            className="px-4 pt-3 pb-2 text-xs font-semibold text-blue-600 hover:no-underline hover:text-blue-700"
             aria-label="Mostrar/ocultar acciones TMS"
           >
             Preguntas frecuentes TMS

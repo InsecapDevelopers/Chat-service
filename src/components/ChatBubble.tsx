@@ -51,7 +51,9 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
   };
 
   // Mapear el rol inicial desde las props
+  console.log('[ChatBubble DEBUG] Props recibidas:', { userRole, userName, userId });
   const initialRoleMapping = mapTmsRoleToCapin(userRole);
+  console.log('[ChatBubble DEBUG] Rol mapeado:', initialRoleMapping);
 
   const [currentUserData, setCurrentUserData] = useState<UserData>({
     userId,
@@ -65,6 +67,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
     idCliente,
     clientesAsociados,
   });
+  console.log('[ChatBubble DEBUG] currentUserData inicial:', currentUserData);
 
   // Actualizar cuando las props cambien (para renderizado directo vía bundleUtils)
   useEffect(() => {
@@ -91,8 +94,11 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
   // Función para inicializar desde script externo
   useEffect(() => {
     const handleUserDataUpdate = (userData: UserData) => {
+      console.log('[ChatBubble DEBUG] handleUserDataUpdate - userData recibido:', userData);
+      
       // Mapear el rol de TMS a rol de Capin
       const roleMapping = mapTmsRoleToCapin(userData.userRole);
+      console.log('[ChatBubble DEBUG] handleUserDataUpdate - roleMapping:', roleMapping);
       
       const updatedData = { 
         ...userData,
@@ -100,13 +106,18 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
         tmsOriginalRole: userData.userRole,
         canSwitchRole: roleMapping.canSwitchRole,
       };
+      console.log('[ChatBubble DEBUG] handleUserDataUpdate - updatedData final:', updatedData);
       
       // Generar sessionId aleatorio para usuarios públicos si no se proporciona
       if (updatedData.userRole === 'publico' && !updatedData.sessionId) {
         updatedData.sessionId = `publico-${Math.random().toString(36).substr(2, 9)}-${Date.now()}`;
       }
       
-      setCurrentUserData(prev => ({ ...prev, ...updatedData }));
+      setCurrentUserData(prev => {
+        const newData = { ...prev, ...updatedData };
+        console.log('[ChatBubble DEBUG] handleUserDataUpdate - setCurrentUserData con:', newData);
+        return newData;
+      });
       setIsOpen(true);
     };
 

@@ -25,8 +25,11 @@ const warnedRoles = new Set<string>();
  * Mapea un rol de TMS BD a su equivalente en el chat
  */
 export function mapTmsRoleToCapin(tmsRole: string | undefined | null): TMSRoleMapping {
+  console.log('[TMS Role Mapper DEBUG] Input:', { tmsRole, type: typeof tmsRole });
+  
   // Si no hay rol, es público
   if (!tmsRole) {
+    console.log('[TMS Role Mapper DEBUG] Sin rol, retornando publico');
     return {
       tmsRole: 'publico',
       capinRole: 'publico',
@@ -36,6 +39,7 @@ export function mapTmsRoleToCapin(tmsRole: string | undefined | null): TMSRoleMa
   }
 
   const normalized = tmsRole.toLowerCase().trim();
+  console.log('[TMS Role Mapper DEBUG] Normalized:', normalized);
 
   switch (normalized) {
     // ADMINISTRADOR - Puede cambiar de rol libremente, mantener como "publico" por defecto
@@ -115,8 +119,9 @@ export function mapTmsRoleToCapin(tmsRole: string | undefined | null): TMSRoleMa
     // LOGISTICA -> tms:logistica
     case 'logistica':
     case 'logística':
+      console.log('[TMS Role Mapper DEBUG] Match logística → tms:logistica');
       return {
-        tmsRole: 'Logistica',
+        tmsRole: 'Logística',
         capinRole: 'tms:logistica',
         canSwitchRole: false,
         displayLabel: 'Logística'
@@ -195,8 +200,8 @@ export function mapTmsRoleToCapin(tmsRole: string | undefined | null): TMSRoleMa
 
     // FALLBACK - Rol desconocido = público
     default:
+      console.warn(`[TMS Role Mapper DEBUG] FALLBACK - Rol desconocido: "${tmsRole}" (normalized: "${normalized}"), asignando público`);
       if (!warnedRoles.has(normalized)) {
-        console.warn(`[TMS Role Mapper] Rol desconocido: "${tmsRole}", asignando público`);
         warnedRoles.add(normalized);
       }
       return {

@@ -49,12 +49,12 @@ export default defineConfig({
     sourcemap: true,
     // Aumentar límite de tamaño de chunk para evitar warnings
     chunkSizeWarningLimit: 2000,
-    // Configurar minificación con Terser para eliminar console logs
+    // Configurar minificación con Terser 
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true,  // Eliminar console.log, console.info, etc
-        drop_debugger: true  // Eliminar debugger statements
+        drop_console: true,   // Eliminar console logs en producción
+        drop_debugger: true   // Eliminar debugger statements
       }
     }
   },
