@@ -92,7 +92,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
   if (!open) {
     return (
       <div 
-        className="relative z-[60] pointer-events-auto"
+        className="fixed bottom-6 right-6 z-[60] pointer-events-auto"
         style={{ pointerEvents: 'auto' }}
       >
         <div className="relative">
@@ -195,7 +195,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
     <AuthContext.Provider value={mockAuthContextValue}>
       <ShadowPortalProvider>
         <ContactProvider isAuthenticated={true}>
-          <div className="relative z-[60] pointer-events-auto" style={{ pointerEvents: 'auto' }}>
+          <div className="fixed bottom-6 right-6 z-[60] pointer-events-auto" style={{ pointerEvents: 'auto' }}>
             <div className="relative [width:min(92vw,440px)]">
               <div className="bg-white border border-border rounded-xl shadow-2xl w-full h-[70vh] max-h-[80vh] md:h-[600px] overflow-hidden pointer-events-auto" style={{ pointerEvents: 'auto' }}>
                 <CapinChat

@@ -104,12 +104,8 @@ const Index = () => {
           </div>
 
           {/* Right Side - Chat */}
-          <div className="flex justify-center lg:justify-end">
-            {/* <CapinChat 
-              userRole="Administrador"
-              className="shadow-xl"
-            /> */}
-            <ChatWidget />
+          <div className="hidden">
+            {/* Chat Widget movido a App.tsx para flotante */}
           </div>
         </div>
       </main>
