@@ -216,7 +216,21 @@ export const AdditionalTmsActions = ({
           order: 2
         };
 
+        const participanteAction = {
+          id: "participante-search",
+          component: (
+            <ParticipanteQuickAction
+              onActionSend={onActionSend}
+              disabled={disabled}
+              currentRole={currentRole}
+            />
+          ),
+          roles: ["tms:comercial"],
+          order: 3
+        };
+
         actionsRegistry.register(estimarCostosAction);
+        actionsRegistry.register(participanteAction);
       }
     }
 
