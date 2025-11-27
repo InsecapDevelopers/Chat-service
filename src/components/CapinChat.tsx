@@ -43,6 +43,13 @@ import { useContact } from "@/hooks/useContact";
 
 type AppRole = "tms" | "publico" | "alumno" | "relator" | "cliente";
 
+// ✅ Interfaz para historial conversacional
+interface HistoryMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp?: string;
+}
+
 interface ChatApiMeta {
   total_cursos?: number;
   page?: number;
@@ -573,7 +580,17 @@ export const CapinChat = ({
     
     const modeCandidate = effectiveIntent && effectiveIntent !== "free_mode" ? "guided" : "free";
 
-    // ✅ Construir payload completo
+    // ✅ Construir historial conversacional (últimos 8 mensajes = 4 turnos)
+    const conversationHistory: HistoryMessage[] = messages
+      .filter(m => m.sender === 'user' || m.sender === 'assistant')
+      .slice(-8) // Últimos 8 mensajes (4 preguntas + 4 respuestas)
+      .map(m => ({
+        role: m.sender === 'user' ? 'user' as const : 'assistant' as const,
+        content: m.text,
+        timestamp: m.timestamp.toISOString()
+      }));
+
+    // ✅ Construir payload completo con contexto conversacional
     const payload = {
       message: question,
       role: finalRole,
@@ -583,6 +600,7 @@ export const CapinChat = ({
       ...(effectiveIntent ? { intent: effectiveIntent } : {}),
       claims: claims,
       ...(filters ? { filters } : {}),
+      ...(conversationHistory.length > 0 ? { context: conversationHistory } : {}), // ✅ Agregar historial
     };
 
     // ✅ Validar payload antes de enviar
@@ -644,8 +662,8 @@ export const CapinChat = ({
       
       // Mostrar toast informativo
       toast({
-        title: "Sesión cambiada",
-        description: `Nueva sesión: ${newSessionId.slice(0, 8)}... Los próximos 8 mensajes usarán contexto limpio.`,
+        title: "Nueva conversación",
+        description: "Historial limpiado. El chatbot no recordará mensajes anteriores.",
         duration: 3000,
       });
       
