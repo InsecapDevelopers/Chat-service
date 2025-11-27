@@ -1728,7 +1728,7 @@ export const CapinChat = ({
 
   return (
     <div
-      className={`bg-white border border-gray-300 shadow-chat rounded-xl overflow-hidden flex flex-col h-[600px] max-w-md w-full ${className}`}
+      className={`bg-white border border-gray-300 shadow-chat rounded-xl overflow-hidden flex flex-col h-[600px] max-w-[448px] w-full ${className}`}
       style={{ minHeight: '600px', minWidth: '280px' }}
     >
       <ContactModalIntegration userRole={selectedRole} />

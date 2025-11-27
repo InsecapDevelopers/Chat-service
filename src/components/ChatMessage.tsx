@@ -255,7 +255,7 @@ export const ChatMessage = ({ message, onRelatorSelect, onParticipanteSelect }: 
               : "bg-chat-assistant-bg text-chat-assistant-text border-2 border-chat-assistant-border rounded-bl-md"
           }`}
         >
-          <p className="whitespace-pre-wrap break-words">
+          <p className="whitespace-pre-wrap break-words text-sm">
             {parts.map((part, i) => {
               if (i % 2 === 1) {
                 const { url, trailing } = splitUrlAndTrailing(part);

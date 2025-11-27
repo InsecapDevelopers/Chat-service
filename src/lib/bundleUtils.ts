@@ -67,6 +67,40 @@ const getShadowCSS = (): string => {
  * Carga la hoja de estilos del chat en el Shadow DOM
  */
 const injectShadowStyles = async (shadowRoot: ShadowRoot): Promise<void> => {
+  // CRÍTICO: Establecer font-size base en :host para evitar herencia del sistema externo
+  const resetHostStyles = document.createElement('style');
+  resetHostStyles.setAttribute('data-host-reset', 'true');
+  resetHostStyles.textContent = `
+    :host {
+      /* CRÍTICO: Establecer font-size base fijo para que rem funcione correctamente */
+      font-size: 20px !important;
+      line-height: 1.5 !important;
+      
+      /* Prevenir herencia de estilos del DOM padre */
+      all: initial;
+      
+      /* Restaurar display y box-sizing después del reset */
+      display: block !important;
+      box-sizing: border-box !important;
+      
+      /* Font stack completo */
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !important;
+      
+      /* Colores base */
+      color: #1a1a1a !important;
+      background: transparent !important;
+      
+      /* Asegurar que los elementos internos hereden correctamente */
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    :host * {
+      box-sizing: border-box !important;
+    }
+  `;
+  shadowRoot.appendChild(resetHostStyles);
+  
   const styleTag = document.createElement('style');
   styleTag.setAttribute('data-chat-styles', 'true');
   
@@ -99,15 +133,13 @@ const injectShadowStyles = async (shadowRoot: ShadowRoot): Promise<void> => {
     }
   }
   
-  // CSS cargado exitosamente (logs reducidos para limpieza de consola)
-  
   // VALIDACIÓN CRÍTICA: Verificar que CSS contiene estilos
   if (!css || css.length < 100) {
     console.error('[Chat] ⚠️ CSS inválido o muy corto, forzando estilos base');
     css = `
       #capin-chat-root { 
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 14px;
+        font-size: 16px;
         line-height: 1.5;
         color: #1a1a1a;
       }

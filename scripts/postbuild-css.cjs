@@ -15,8 +15,32 @@ console.log('📝 [PostBuild CSS] Manteniendo prefijos #capin-chat-root para Sha
 // NO ELIMINAR prefijos - mantenerlos para que funcionen con el wrapper interno
 // Solo convertir :root a :host para variables CSS
 originalCSS = originalCSS.replace(/:root\{/g, ':host{');
+
+// CRÍTICO: Agregar reset de :host al inicio para prevenir herencia de tamaños del TMS
+  const hostReset = `
+/* CRÍTICO: Reset de :host para prevenir herencia de font-size del sistema externo */
+:host {
+  font-size: 20px !important;
+  line-height: 1.5 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  all: initial;
+  display: block !important;
+  box-sizing: border-box !important;
+}
+
+:host * {
+  box-sizing: border-box !important;
+}
+
+`;
+
+// Insertar el reset ANTES de los estilos existentes
+originalCSS = hostReset + originalCSS;
+
 fs.writeFileSync(shadowStylesPath, originalCSS);
-console.log('✅ [PostBuild CSS] shadow-styles.css creado con prefijos #capin-chat-root MANTENIDOS');
+console.log('✅ [PostBuild CSS] shadow-styles.css creado con prefijos #capin-chat-root MANTENIDOS y reset de :host');
 
 // SEGUNDO: Leer el archivo CSS para transformarlo (agregar MÁS prefijos para standalone)
 const css = fs.readFileSync(cssFilePath, 'utf8');

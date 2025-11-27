@@ -289,7 +289,7 @@ export const ChatHeader = ({
                     <HelpCircle className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-xs">
+                <TooltipContent side="bottom" className="max-w-[320px]">
                   <p className="text-sm">
                     <strong>¿Necesitas ayuda?</strong>
                     <br />

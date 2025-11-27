@@ -76,7 +76,7 @@ export const R24Modal = ({ isOpen, onClose, onConfirm }: R24ModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[448px]">
         <DialogHeader>
           <DialogTitle>Consultar R24</DialogTitle>
           <DialogDescription>

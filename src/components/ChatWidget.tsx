@@ -195,9 +195,31 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
     <AuthContext.Provider value={mockAuthContextValue}>
       <ShadowPortalProvider>
         <ContactProvider isAuthenticated={true}>
-          <div className="fixed bottom-6 right-6 z-[60] pointer-events-auto" style={{ pointerEvents: 'auto' }}>
-            <div className="relative [width:min(92vw,440px)]">
-              <div className="bg-white border border-border rounded-xl shadow-2xl w-full h-[70vh] max-h-[80vh] md:h-[600px] overflow-hidden pointer-events-auto" style={{ pointerEvents: 'auto' }}>
+          <div 
+            className="fixed bottom-6 right-6 z-[60] pointer-events-auto" 
+            style={{ 
+              pointerEvents: 'auto',
+              fontSize: '20px' // CRÍTICO: Establecer base font-size explícitamente
+            }}
+          >
+            <div 
+              className="relative" 
+              style={{
+                width: 'min(92vw, 440px)',
+                fontSize: '20px' // CRÍTICO: Aumentar font-size base para forzar herencia
+              }}
+            >
+              <div 
+                className="bg-white border border-border rounded-xl shadow-2xl overflow-hidden pointer-events-auto" 
+                style={{ 
+                  pointerEvents: 'auto',
+                  width: '440px',
+                  maxWidth: '92vw',
+                  height: '600px',
+                  maxHeight: '85vh',
+                  fontSize: '20px' // CRÍTICO: Asegurar font-size base en el contenedor principal
+                }}
+              >
                 <CapinChat
                   className="h-full max-w-none w-full"
                   apiEndpoint={import.meta.env.VITE_API_ENDPOINT}

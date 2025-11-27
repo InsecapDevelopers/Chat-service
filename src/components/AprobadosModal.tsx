@@ -76,7 +76,7 @@ export const AprobadosModal = ({ isOpen, onClose, onConfirm }: AprobadosModalPro
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[448px]">
         <DialogHeader>
           <DialogTitle>Consultar Participantes Aprobados</DialogTitle>
           <DialogDescription>

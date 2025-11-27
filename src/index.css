@@ -39,7 +39,7 @@ All colors MUST be HSL.
     --input: 214 32% 91%;
     --ring: 227 58% 53%;
 
-    --radius: 0.75rem;
+    --radius: 12px;
 
     /* Chat specific colors */
     --chat-user-bg: 227 58% 53%;
