@@ -20,6 +20,8 @@
   line-height: 24px !important;
   min-height: 44px !important; /* h-11 */
   padding: 10px 16px !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
 }
 
 /* Botones pequeños (sm) */
@@ -99,10 +101,109 @@
   min-height: 20px !important;
 }
 
+/* === TRANSFORMACIONES Y ROTACIONES (ACCORDION) === */
+/* Asegurar que las transformaciones funcionen correctamente en Shadow DOM */
+#capin-chat-root *,
+#chat-bubble-container * {
+  transform-origin: center center !important;
+}
+
+/* Rotación explícita para flechas de accordion */
+#capin-chat-root [data-state="open"] svg,
+#capin-chat-root .rotate-180 {
+  transform: rotate(180deg) !important;
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+#capin-chat-root [data-state="closed"] svg,
+#capin-chat-root .rotate-0 {
+  transform: rotate(0deg) !important;
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Asegurar que los triggers de accordion mantengan pointer-events */
+#capin-chat-root [data-radix-accordion-trigger],
+#capin-chat-root button[role="button"],
+#capin-chat-root [role="button"] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Asegurar que todos los elementos interactivos funcionen */
+#capin-chat-root button *,
+#capin-chat-root [role="button"] * {
+  pointer-events: none !important; /* Los hijos no deben interceptar clicks */
+}
+
+#capin-chat-root button,
+#capin-chat-root [role="button"] {
+  pointer-events: auto !important; /* El botón sí debe recibir clicks */
+}
+
+/* Estilos para el botón X de ocultar burbuja */
+#capin-chat-root button[aria-label*="Ocultar"],
+#chat-bubble-container button[aria-label*="Ocultar"] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  animation: fadeIn 0.3s ease-in-out !important;
+  z-index: 100 !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* === QUICK ACTIONS BUTTONS === */
 #capin-chat-root .tms-quick-action,
 #chat-bubble-container .tms-quick-action {
   font-size: 0.9375rem !important; /* 18.75px */
   padding: 0.75rem 1rem !important;
   min-height: 3rem !important;
+}
+
+/* ===================================================================
+   REGLAS CRÍTICAS PARA EVENTOS DE PUNTERO EN SHADOW DOM
+   Estas reglas DEBEN aplicarse después de todo lo demás
+   para garantizar que los botones funcionen correctamente
+   =================================================================== */
+
+/* Forzar pointer-events en TODOS los elementos interactivos */
+#capin-chat-root button,
+#capin-chat-root [role="button"],
+#capin-chat-root [data-radix-accordion-trigger],
+#capin-chat-root [data-radix-dropdown-menu-trigger],
+#capin-chat-root [data-radix-popover-trigger],
+#capin-chat-root [data-radix-dialog-trigger],
+#capin-chat-root a,
+#capin-chat-root input,
+#capin-chat-root select,
+#capin-chat-root textarea {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Los hijos de botones NO deben interceptar eventos */
+#capin-chat-root button *,
+#capin-chat-root [role="button"] *,
+#capin-chat-root [data-radix-accordion-trigger] *,
+#capin-chat-root [data-radix-dropdown-menu-trigger] * {
+  pointer-events: none !important;
+}
+
+/* Asegurar que inputs tengan cursor de texto */
+#capin-chat-root input,
+#capin-chat-root textarea {
+  cursor: text !important;
+}
+
+/* Asegurar que select tenga cursor pointer */
+#capin-chat-root select {
+  cursor: pointer !important;
 }

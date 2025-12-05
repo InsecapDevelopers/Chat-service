@@ -207,3 +207,39 @@ select,
   pointer-events: auto !important;
   cursor: pointer !important;
 }
+
+/* ===================================================================
+   REGLAS CRÍTICAS PARA SHADOW DOM - POINTER EVENTS
+   Estas reglas SON CRÍTICAS para que los botones funcionen
+   dentro del Shadow DOM del chat embebido
+   =================================================================== */
+
+/* Todos los botones y elementos interactivos */
+#capin-chat-root button,
+#capin-chat-root [role="button"],
+#capin-chat-root [data-radix-accordion-trigger],
+#capin-chat-root [data-radix-dropdown-menu-trigger],
+#capin-chat-root [data-radix-popover-trigger],
+#capin-chat-root [data-radix-dialog-trigger],
+#capin-chat-root [data-radix-select-trigger],
+#capin-chat-root a,
+#capin-chat-root input,
+#capin-chat-root select,
+#capin-chat-root textarea {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Los hijos de botones NO deben interceptar eventos (para que el click llegue al botón padre) */
+#capin-chat-root button *,
+#capin-chat-root [role="button"] *,
+#capin-chat-root [data-radix-accordion-trigger] *,
+#capin-chat-root [data-radix-dropdown-menu-trigger] * {
+  pointer-events: none !important;
+}
+
+/* Inputs y textareas tienen cursor de texto */
+#capin-chat-root input,
+#capin-chat-root textarea {
+  cursor: text !important;
+}

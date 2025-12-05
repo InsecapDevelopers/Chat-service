@@ -249,12 +249,13 @@ export const renderChatBubble = async (
   options: ChatEmbedOptions = {}
 ) => {
   try {
-    // FORZAR que los logs se vean
-    console.clear();
-    console.log('%c[Chat] 🚀 INICIANDO CARGA CON SHADOW DOM', 'background: #2563eb; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
-    console.log('[Chat] Iniciando carga con Shadow DOM...');
-
     const { zIndex = 1085, debug = false } = options;
+    
+    if (debug) {
+      console.clear();
+      console.log('%c[Chat] 🚀 INICIANDO CARGA CON SHADOW DOM', 'background: #2563eb; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+      console.log('[Chat] Iniciando carga con Shadow DOM...');
+    }
 
     // 1. Obtener o crear contenedor host
     let host = document.getElementById(containerId) as HostWithCapinData | null;
@@ -275,7 +276,14 @@ export const renderChatBubble = async (
       width: auto !important;
       height: auto !important;
       pointer-events: auto !important;
+      user-select: auto !important;
+      -webkit-user-select: auto !important;
+      touch-action: auto !important;
+      isolation: isolate !important;
     `;
+    
+    // CRÍTICO: Prevenir que el TMS interfiera con el host
+    host.setAttribute('data-capin-chat', 'isolated');
 
     // 2. Idempotencia: si ya existe un root, desmontarlo
     if (host.__capinRoot) {
@@ -287,11 +295,135 @@ export const renderChatBubble = async (
       }
     }
 
-    // 3. Crear o reutilizar Shadow DOM
-    const shadowRoot = host.shadowRoot ?? host.attachShadow({ mode: 'open' });
+    // 3. Crear o reutilizar Shadow DOM con delegatesFocus para eventos
+    // CRÍTICO: delegatesFocus: true permite que los eventos de focus/click se deleguen correctamente
+    const shadowRoot = host.shadowRoot ?? host.attachShadow({ 
+      mode: 'open',
+      delegatesFocus: true  // ✅ SOLUCIÓN: Delega focus a elementos internos del Shadow DOM
+    });
     
     // Limpiar contenido anterior del shadow
     shadowRoot.innerHTML = '';
+
+    // 🛡️ SOLUCIÓN ULTRA-AGRESIVA: Re-disparar clicks en el elemento correcto
+    // El problema es que algo está bloqueando los eventos ANTES de llegar a los botones
+    const setupEventBoundary = (shadowHost: HTMLElement, shadowRoot: ShadowRoot) => {
+      if (debug) console.log('[Chat] 🛡️ Instalando Event Boundary ultra-agresivo...');
+
+      // PASO 1: Interceptar clicks en el shadowHost y re-dispararlos en el elemento real
+      let lastClickTime = 0;
+      
+      shadowHost.addEventListener('click', (e: Event) => {
+        const now = Date.now();
+        if (now - lastClickTime < 50) return; // Prevenir loops infinitos
+        lastClickTime = now;
+
+        e.stopPropagation(); // NO salir al TMS
+        
+        const mouseEvent = e as MouseEvent;
+        const x = mouseEvent.clientX;
+        const y = mouseEvent.clientY;
+        
+        // Encontrar el elemento REAL bajo el cursor dentro del Shadow DOM
+        const elementsFromPoint = shadowRoot.elementsFromPoint(x, y);
+        const clickableElement = elementsFromPoint.find(el => 
+          el.tagName === 'BUTTON' || 
+          el.closest('button') !== null ||
+          (el as HTMLElement).onclick !== null
+        );
+
+        if (clickableElement) {
+          const button = clickableElement.tagName === 'BUTTON' 
+            ? clickableElement 
+            : clickableElement.closest('button');
+          
+          if (button) {
+            if (debug) {
+              console.log('[Chat] 🎯 Re-disparando click en botón:', {
+                tagName: button.tagName,
+                id: button.id || 'sin-id',
+                className: button.className,
+                text: button.textContent?.trim().slice(0, 30)
+              });
+            }
+            
+            // Re-disparar click DIRECTAMENTE en el botón
+            const syntheticClick = new MouseEvent('click', {
+              bubbles: true,
+              cancelable: true,
+              view: window,
+              clientX: x,
+              clientY: y
+            });
+            button.dispatchEvent(syntheticClick);
+          }
+        }
+      }, { capture: true, passive: false });
+
+      // PASO 2: Detener otros eventos para que no salgan al TMS
+      const eventTypes = ['mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchstart', 'touchend'];
+      eventTypes.forEach(eventType => {
+        shadowHost.addEventListener(eventType, (e: Event) => {
+          e.stopPropagation();
+        }, { capture: false, passive: false });
+      });
+
+      // PASO 2: Crear listeners directos en botones cuando React monte
+      const setupDirectListeners = () => {
+        const buttons = shadowRoot.querySelectorAll('button');
+        if (debug) console.log(`[Chat] 🔧 Encontrados ${buttons.length} botones en Shadow DOM`);
+        
+        buttons.forEach((button, index) => {
+          // Verificar si ya tiene el listener
+          if (button.hasAttribute('data-capin-listener')) return;
+          button.setAttribute('data-capin-listener', 'true');
+
+          if (debug) {
+            const buttonInfo = {
+              index,
+              id: button.id || 'sin-id',
+              className: button.className,
+              text: button.textContent?.trim().slice(0, 20) || 'sin-texto'
+            };
+            console.log(`[Chat] 🔧 Instalando listener directo en botón:`, buttonInfo);
+          }
+
+          // Listener DIRECTO que no puede ser bloqueado
+          button.addEventListener('click', (e) => {
+            // NO hacer stopPropagation aquí - dejar que React lo maneje
+          }, { capture: true, passive: false });
+        });
+      };
+
+      // PASO 3: Instalar listeners después de que React monte (con MutationObserver)
+      const observer = new MutationObserver((mutations) => {
+        let shouldSetup = false;
+        for (const mutation of mutations) {
+          if (mutation.addedNodes.length > 0) {
+            shouldSetup = true;
+            break;
+          }
+        }
+        if (shouldSetup) {
+          setupDirectListeners();
+        }
+      });
+
+      observer.observe(shadowRoot, {
+        childList: true,
+        subtree: true
+      });
+
+      // Instalación inicial después de un delay
+      setTimeout(() => {
+        setupDirectListeners();
+      }, 100);
+
+      if (debug) console.log('[Chat] 🛡️ Event Boundary agresivo instalado con MutationObserver');
+    };
+
+    // Instalar Event Boundary
+    setupEventBoundary(host, shadowRoot);
 
     // 4. Inyectar estilos primero
     if (debug) console.log('[Chat] Inyectando estilos en Shadow DOM...');
@@ -300,18 +432,23 @@ export const renderChatBubble = async (
     // 5. Contenedor de montaje React (simple, sin wrappers adicionales)
     const mountPoint = document.createElement('div');
     mountPoint.id = 'capin-chat-mount';
+    mountPoint.setAttribute('tabindex', '-1'); // Permite focus programático
     mountPoint.style.cssText = `
       position: relative !important;
+      pointer-events: auto !important;
+      outline: none !important;
     `;
     shadowRoot.appendChild(mountPoint);
 
     // 6. Contenedor para portales de Radix UI (Select, Dropdown, etc.)
     const portalContainer = document.createElement('div');
     portalContainer.setAttribute('data-chat-portal-root', '');
+    portalContainer.setAttribute('tabindex', '-1'); // Permite focus en hijos
     portalContainer.style.cssText = `
       position: fixed !important;
       z-index: 9999 !important;
       pointer-events: none !important;
+      inset: 0 !important;
     `;
     shadowRoot.appendChild(portalContainer);
     

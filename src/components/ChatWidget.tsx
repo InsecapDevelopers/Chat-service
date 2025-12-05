@@ -43,6 +43,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
   const [open, setOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [isWelcomeFading, setIsWelcomeFading] = useState(false);
+  const [bubbleHidden, setBubbleHidden] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
 
   // Log de montaje
@@ -54,7 +55,6 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
         // Button ready with pointer-events: ${computed.pointerEvents}
       }
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Ocultar mensaje de bienvenida después de 3 segundos con animación
@@ -91,33 +91,81 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
 
   if (!open) {
     return (
-      <div 
-        className="fixed bottom-6 right-6 z-[60] pointer-events-auto"
-        style={{ pointerEvents: 'auto' }}
-      >
-        <div className="relative">
-          <button
-            ref={btnRef}
-            aria-label="Abrir chat CapinIA"
-            onClick={(e) => {
-              setOpen(true);
-            }}
-            onPointerUp={(e) => {
-              // Fallback: si onClick no funciona, usar PointerUp
-              if (!open) {
-                setOpen(true);
-              }
-            }}
-            className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full bg-gradient-to-br from-primary to-accent shadow-xl hover:scale-110 transition-transform inline-flex items-center justify-center border-0 cursor-pointer"
-            style={{
-              background: 'linear-gradient(135deg, hsl(227 58% 53%), hsl(191 100% 47%))',
-              border: 'none',
-              cursor: 'pointer',
-              pointerEvents: 'auto'
-            }}
+      <>
+        {!bubbleHidden && (
+          /* Burbuja flotante */
+          <div 
+            className="fixed bottom-6 right-6 z-[60] pointer-events-auto"
+            style={{ pointerEvents: 'auto' }}
           >
-            <MessageCircle className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-white" />
-          </button>
+            <div className="relative">
+              {/* Botón X para ocultar la burbuja */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setBubbleHidden(true);
+                }}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+                className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-gray-600 hover:bg-gray-700 text-white z-10 transition-all duration-200 hover:scale-125"
+                style={{
+                  opacity: 0.7,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '18px',
+                  lineHeight: '24px',
+                  animation: 'fadeIn 0.3s ease-in-out',
+                  pointerEvents: 'auto',
+                  touchAction: 'auto'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+                aria-label="Ocultar burbuja"
+              >
+                ×
+              </button>
+              
+              <button
+                ref={btnRef}
+                aria-label="Abrir chat CapinIA"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setOpen(true);
+                }}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+                onPointerUp={(e) => {
+                  e.stopPropagation();
+                  // Fallback: si onClick no funciona, usar PointerUp
+                  if (!open) {
+                    setOpen(true);
+                  }
+                }}
+                className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full bg-gradient-to-br from-primary to-accent shadow-xl hover:scale-110 transition-transform inline-flex items-center justify-center border-0 cursor-pointer"
+                style={{
+                  background: 'linear-gradient(135deg, hsl(227 58% 53%), hsl(191 100% 47%))',
+                  border: 'none',
+                  cursor: 'pointer',
+                  pointerEvents: 'auto'
+                }}
+              >
+                <MessageCircle className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-white" />
+              </button>
 
           {showWelcome && (
             <div 
@@ -159,8 +207,10 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
               </div>
             </div>
           )}
-        </div>
-      </div>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 
@@ -215,8 +265,8 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
                   pointerEvents: 'auto',
                   width: '440px',
                   maxWidth: '92vw',
-                  height: '600px',
-                  maxHeight: '85vh',
+                  height: '800px',
+                  maxHeight: '90vh',
                   fontSize: '20px' // CRÍTICO: Asegurar font-size base en el contenedor principal
                 }}
               >

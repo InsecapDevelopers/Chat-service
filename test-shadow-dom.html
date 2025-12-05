@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Shadow DOM - Pointer Events</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .test-result.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .test-result.failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        #shadow-host {
+            border: 2px solid #e3e3e3;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 8px;
+        }
+        .log-area {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            padding: 5px;
+            margin: 2px 0;
+            border-left: 3px solid #007bff;
+            padding-left: 10px;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Test de Shadow DOM - Pointer Events</h1>
+        <p>Este test verifica que los botones dentro del Shadow DOM respondan a eventos de click.</p>
+        
+        <div id="shadow-host"></div>
+        
+        <div class="log-area">
+            <h3>📋 Log de Eventos:</h3>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // Logger
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.style.borderLeftColor = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007bff';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Cargar y aplicar CSS del bundle
+        async function loadBundleCSS() {
+            try {
+                const response = await fetch('C:/TMS/TMS/Content/js/Chat/style.css');
+                const cssText = await response.text();
+                log('✅ CSS del bundle cargado correctamente', 'success');
+                return cssText;
+            } catch (error) {
+                log(`❌ Error cargando CSS: ${error.message}`, 'error');
+                return '';
+            }
+        }
+
+        // Crear Shadow DOM con componentes de prueba
+        async function createShadowDOMTest() {
+            const host = document.getElementById('shadow-host');
+            const shadowRoot = host.attachShadow({ mode: 'open' });
+            
+            log('🔨 Creando Shadow DOM...');
+
+            // Cargar CSS del bundle
+            const bundleCSS = await loadBundleCSS();
+
+            // HTML del chat con botones de prueba
+            shadowRoot.innerHTML = `
+                <style>
+                    ${bundleCSS}
+                </style>
+                <div id="capin-chat-root" style="font-size: 20px; padding: 20px; background: white; border-radius: 8px;">
+                    <h2 style="margin-bottom: 20px; color: #333;">🧩 Shadow DOM Test Components</h2>
+                    
+                    <!-- Test 1: Botón X de cerrar burbuja -->
+                    <div style="position: relative; background: linear-gradient(135deg, #3b82f6, #06b6d4); color: white; padding: 60px 20px; border-radius: 12px; margin-bottom: 20px;">
+                        <button 
+                            id="close-btn"
+                            class="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-gray-600 hover:bg-gray-700 text-white z-10 transition-all duration-200 hover:scale-125"
+                            style="opacity: 0.7; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 24px; position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; background: #4b5563; color: white; border: none; cursor: pointer;"
+                            onclick="handleCloseClick(event)"
+                            onmouseenter="this.style.opacity = '1'"
+                            onmouseleave="this.style.opacity = '0.7'"
+                        >
+                            ×
+                        </button>
+                        <p style="margin: 0; text-align: center; font-size: 16px;">Burbuja de Chat</p>
+                        <p style="margin: 10px 0 0 0; text-align: center; font-size: 14px; opacity: 0.9;">Haz click en la X para cerrar →</p>
+                    </div>
+
+                    <!-- Test 2: Accordion de preguntas frecuentes -->
+                    <div style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
+                        <button 
+                            id="accordion-btn"
+                            data-radix-accordion-trigger
+                            style="width: 100%; padding: 16px; background: white; border: none; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 16px;"
+                            onclick="handleAccordionClick(event)"
+                        >
+                            <span>❓ Preguntas Frecuentes</span>
+                            <span style="transition: transform 0.2s;">▼</span>
+                        </button>
+                        <div id="accordion-content" style="display: none; padding: 16px; background: #f9fafb; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0;">Contenido del accordion con preguntas frecuentes...</p>
+                        </div>
+                    </div>
+
+                    <!-- Test 3: Botón simple -->
+                    <div style="text-align: center;">
+                        <button 
+                            id="simple-btn"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            style="padding: 12px 24px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;"
+                            onclick="handleSimpleClick(event)"
+                        >
+                            🚀 Botón de Prueba
+                        </button>
+                    </div>
+
+                    <!-- Contador de clicks -->
+                    <div style="margin-top: 20px; padding: 15px; background: #f3f4f6; border-radius: 8px; text-align: center;">
+                        <h3 style="margin: 0 0 10px 0; font-size: 18px;">📊 Resultados de Test:</h3>
+                        <p id="click-count" style="margin: 0; font-size: 16px; color: #374151;">
+                            Clicks registrados: <strong>0</strong>
+                        </p>
+                    </div>
+                </div>
+            `;
+
+            // Event Handlers dentro del Shadow DOM
+            let clickCount = 0;
+            const clickCountDisplay = shadowRoot.getElementById('click-count');
+            
+            function updateClickCount(buttonName) {
+                clickCount++;
+                clickCountDisplay.innerHTML = `Clicks registrados: <strong>${clickCount}</strong>`;
+                log(`✅ Click en ${buttonName} - Total: ${clickCount}`, 'success');
+            }
+
+            window.handleCloseClick = function(event) {
+                event.stopPropagation();
+                updateClickCount('Botón X (Cerrar)');
+                alert('✅ ¡Botón X funcionando! La burbuja se cerraría aquí.');
+            };
+
+            window.handleAccordionClick = function(event) {
+                event.stopPropagation();
+                updateClickCount('Accordion (Preguntas Frecuentes)');
+                const content = shadowRoot.getElementById('accordion-content');
+                const isOpen = content.style.display !== 'none';
+                content.style.display = isOpen ? 'none' : 'block';
+                event.currentTarget.querySelector('span:last-child').style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+            };
+
+            window.handleSimpleClick = function(event) {
+                event.stopPropagation();
+                updateClickCount('Botón Simple');
+                alert('✅ ¡Botón simple funcionando correctamente!');
+            };
+
+            log('✅ Shadow DOM creado exitosamente', 'success');
+            log('👆 Intenta hacer click en los botones de arriba', 'info');
+        }
+
+        // Inicializar test
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🚀 Iniciando test de Shadow DOM...', 'info');
+            createShadowDOMTest();
+        });
+    </script>
+</body>
+</html>
