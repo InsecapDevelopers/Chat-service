@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { SafeButton as Button } from "@/components/ui/safe-button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send } from "lucide-react";
+import { Send, Square } from "lucide-react";
 import { ContextMenu, type ContextObject } from "./ContextMenu";
 import { ContextCard } from "./ContextCard";
 
@@ -9,20 +9,25 @@ export type { ContextObject };
 
 interface ChatInputProps {
   onSendMessage: (text: string, contexts?: ContextObject[]) => void;
+  onCancelRequest?: () => void;
   disabled?: boolean;
+  isSending?: boolean;
   inputRef?: React.RefObject<HTMLTextAreaElement>; // ref externo opcional (focus, etc)
   showContextMenu?: boolean; // botón "+" solo en rol TMS
 }
 
 export const ChatInput = ({
   onSendMessage,
+  onCancelRequest,
   disabled,
+  isSending,
   inputRef,
   showContextMenu = false,
 }: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const [showCodeHint, setShowCodeHint] = useState(false);
   const [contexts, setContexts] = useState<ContextObject[]>([]);
+  const inputDisabled = !!disabled || !!isSending;
 
   // Ref interna REAL del textarea, siempre la misma
   const innerRef = useRef<HTMLTextAreaElement>(null);
@@ -125,7 +130,7 @@ export const ChatInput = ({
           {showContextMenu && (
             <ContextMenu
               onAddContext={handleAddContext}
-              disabled={disabled}
+              disabled={inputDisabled}
               contextCount={contexts.length}
               maxContexts={5}
             />
@@ -138,7 +143,7 @@ export const ChatInput = ({
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
               placeholder="Escribe tu consulta aquí..."
-              disabled={disabled}
+              disabled={inputDisabled}
               rows={1}
               className={`
                 min-h-[40px] sm:min-h-[44px]
@@ -172,13 +177,25 @@ export const ChatInput = ({
             )}
           </div>
 
-          <Button
-            type="submit"
-            disabled={disabled || !message.trim()}
-            className="shrink-0 h-10 w-10 sm:h-auto sm:w-auto sm:px-4 bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center rounded-2xl shadow-md"
-          >
-            <Send className="h-4 w-4 sm:h-5 sm:w-5" />
-          </Button>
+          {isSending && onCancelRequest ? (
+            <Button
+              type="button"
+              onClick={onCancelRequest}
+              disabled={disabled}
+              aria-label="Cancelar solicitud"
+              className="shrink-0 h-10 w-10 sm:h-auto sm:w-auto sm:px-4 bg-destructive hover:bg-destructive/90 text-destructive-foreground flex items-center justify-center rounded-2xl shadow-md"
+            >
+              <Square className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              disabled={inputDisabled || !message.trim()}
+              className="shrink-0 h-10 w-10 sm:h-auto sm:w-auto sm:px-4 bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center rounded-2xl shadow-md"
+            >
+              <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
+          )}
         </div>
       </form>
     </div>

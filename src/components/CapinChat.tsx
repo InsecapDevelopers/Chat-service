@@ -215,6 +215,60 @@ export const CapinChat = ({
   const [isTmsModalOpen, setIsTmsModalOpen] = useState(false);
   const [selectedTmsAction, setSelectedTmsAction] = useState<TmsActionType | null>(null);
 
+  const activeRequestRef = useRef<AbortController | null>(null);
+
+  const buildCancelEndpoint = (endpoint: string, currentSessionId?: string) => {
+    if (!currentSessionId) return null;
+    const trimmed = endpoint.replace(/\/+$/, "");
+    const cancelPath = `/api/chat/cancel/${currentSessionId}`;
+    if (/\/api\/chat$/.test(trimmed)) {
+      return `${trimmed.replace(/\/api\/chat$/, "")}${cancelPath}`;
+    }
+    return `${trimmed}${cancelPath}`;
+  };
+
+  const createRequestController = () => {
+    const controller = new AbortController();
+    activeRequestRef.current = controller;
+    return controller;
+  };
+
+  const clearRequestController = (controller: AbortController) => {
+    if (activeRequestRef.current === controller) {
+      activeRequestRef.current = null;
+    }
+  };
+
+  const isAbortError = (error: unknown) => {
+    if (error instanceof DOMException) {
+      return error.name === "AbortError";
+    }
+    return (error as { name?: string })?.name === "AbortError";
+  };
+
+  const handleCancelRequest = () => {
+    if (activeRequestRef.current) {
+      activeRequestRef.current.abort();
+      activeRequestRef.current = null;
+    }
+    setIsTyping(false);
+
+    const cancelEndpoint = buildCancelEndpoint(apiEndpoint, sessionId);
+    if (!cancelEndpoint) return;
+    toast({
+      title: "Solicitud cancelada",
+      description: "La petición en curso fue cancelada.",
+      duration: 2500,
+    });
+    try {
+      window.fetch(cancelEndpoint, { method: "POST" }).catch(() => {
+        // Silenciar errores de cancelación
+      });
+    } catch {
+      // Silenciar errores de cancelación
+    }
+  };
+
   const { user } = useAuth();
   
   // En modo desarrollo, usar datos de administrador mockeados
@@ -567,6 +621,13 @@ export const CapinChat = ({
     const finalRole = selectedRole === "tms" ? `tms:${tmsSubrol}` : selectedRole;
 
     // Log para debugging del RAG backend
+    if (import.meta.env.DEV) {
+      console.log("[Chat] RAG endpoint en uso:", apiEndpoint, {
+        envEndpoint: import.meta.env.VITE_API_ENDPOINT ?? "(fallback)",
+        isProd: import.meta.env.PROD,
+        isDev: import.meta.env.DEV,
+      });
+    }
 
 
     // ADD: Verificación explícita de payload para debugging
@@ -609,19 +670,25 @@ export const CapinChat = ({
       throw new Error(`Payload inválido: ${validation.errors.join(', ')}`);
     }
 
-    const res = await fetch(apiEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const controller = createRequestController();
+    try {
+      const res = await fetch(apiEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
 
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`HTTP ${res.status} - ${text}`);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`HTTP ${res.status} - ${text}`);
+      }
+      const data = (await res.json()) as ChatApiResponse;
+      
+      return data;
+    } finally {
+      clearRequestController(controller);
     }
-    const data = (await res.json()) as ChatApiResponse;
-    
-    return data;
   };
 
   const handleClearChat = () => {
@@ -839,12 +906,19 @@ export const CapinChat = ({
         throw new Error(`Payload inválido: ${validation.errors.join(', ')}`);
       }
 
-      // Enviar directamente al API endpoint
-      const response = await fetch(apiEndpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fullPayload),
-      });
+      const controller = createRequestController();
+      let response: Response;
+      try {
+        // Enviar directamente al API endpoint
+        response = await fetch(apiEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(fullPayload),
+          signal: controller.signal,
+        });
+      } finally {
+        clearRequestController(controller);
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -888,6 +962,9 @@ export const CapinChat = ({
       }
 
     } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
       console.error("Error en acción adicional:", error);
       
       // Para errores 422 o 404, generar datos de demostración
@@ -959,12 +1036,19 @@ export const CapinChat = ({
         throw new Error(`Payload inválido: ${validation.errors.join(', ')}`);
       }
 
-      // Enviar al API endpoint
-      const response = await fetch(apiEndpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fullPayload),
-      });
+      const controller = createRequestController();
+      let response: Response;
+      try {
+        // Enviar al API endpoint
+        response = await fetch(apiEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(fullPayload),
+          signal: controller.signal,
+        });
+      } finally {
+        clearRequestController(controller);
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -999,6 +1083,9 @@ export const CapinChat = ({
       }
 
     } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
       console.error("Error en acción de alumno:", error);
       
       toast({
@@ -1138,12 +1225,19 @@ export const CapinChat = ({
 
       console.info('[Relator Intent Payload]', fullPayload);
 
-      // Enviar al API endpoint
-      const response = await fetch(apiEndpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fullPayload),
-      });
+      const controller = createRequestController();
+      let response: Response;
+      try {
+        // Enviar al API endpoint
+        response = await fetch(apiEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(fullPayload),
+          signal: controller.signal,
+        });
+      } finally {
+        clearRequestController(controller);
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -1168,6 +1262,9 @@ export const CapinChat = ({
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
       console.error("❌ Error en intent de relator:", error);
       
       // Mostrar detalles del error si es un error de red
@@ -1253,12 +1350,19 @@ export const CapinChat = ({
       if (!validation.valid) {
         throw new Error(`Payload inválido: ${validation.errors.join(', ')}`);
       }
-      // Enviar al API endpoint
-      const response = await fetch(apiEndpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fullPayload),
-      });
+      const controller = createRequestController();
+      let response: Response;
+      try {
+        // Enviar al API endpoint
+        response = await fetch(apiEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(fullPayload),
+          signal: controller.signal,
+        });
+      } finally {
+        clearRequestController(controller);
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -1301,6 +1405,9 @@ export const CapinChat = ({
       setIsTyping(false);
 
     } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
       console.error("Error en cliente intent request:", error);
       const errorMessage: Message = {
         id: crypto.randomUUID ? crypto.randomUUID() : `msg-${Date.now()}-error`,
@@ -1493,6 +1600,9 @@ export const CapinChat = ({
               };
               setMessages((prev) => [...prev, assistantMessage]);
             } catch (error) {
+              if (isAbortError(error)) {
+                return;
+              }
               setMessages((prev) => [...prev, {
                 id: (Date.now() + 1).toString(),
                 text: "Lo siento, ocurrió un problema al contactar al servicio. Intenta nuevamente.",
@@ -1545,6 +1655,9 @@ export const CapinChat = ({
             };
             setMessages((prev) => [...prev, assistantMessage]);
           } catch (error) {
+            if (isAbortError(error)) {
+              return;
+            }
             setMessages((prev) => [...prev, {
               id: (Date.now() + 1).toString(),
               text: "Lo siento, ocurrió un problema al contactar al servicio. Intenta nuevamente.",
@@ -1596,6 +1709,9 @@ export const CapinChat = ({
             };
             setMessages((prev) => [...prev, assistantMessage]);
           } catch (error) {
+            if (isAbortError(error)) {
+              return;
+            }
             setMessages((prev) => [...prev, {
               id: (Date.now() + 1).toString(),
               text: "Lo siento, ocurrió un problema al contactar al servicio. Intenta nuevamente.",
@@ -1681,6 +1797,9 @@ export const CapinChat = ({
       };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
       setMessages((prev) => [
         ...prev,
         {
@@ -1782,13 +1901,15 @@ export const CapinChat = ({
       {/* ADD: Acciones TMS - Solo para roles tms:* */}
       {(() => {
         const finalRole = selectedRole === "tms" ? `tms:${tmsSubrol}` : selectedRole;
-        console.log('[CapinChat DEBUG] Renderizando TmsQuickActions:', {
-          selectedRole,
-          tmsSubrol,
-          finalRole,
-          isTmsRole,
-          shouldRender: isTmsRole
-        });
+        if (import.meta.env.DEV) {
+          console.log('[CapinChat DEBUG] Renderizando TmsQuickActions:', {
+            selectedRole,
+            tmsSubrol,
+            finalRole,
+            isTmsRole,
+            shouldRender: isTmsRole
+          });
+        }
         return isTmsRole && (
           <TmsQuickActions 
             onActionClick={handleTmsActionClick}
@@ -1958,7 +2079,9 @@ export const CapinChat = ({
 
       <ChatInput 
         onSendMessage={(text, contexts) => handleSendMessage(text, undefined, contexts)} 
-        disabled={isTyping || isResettingSession} 
+        onCancelRequest={handleCancelRequest}
+        disabled={isResettingSession} 
+        isSending={isTyping}
         inputRef={inputRef}
         showContextMenu={isTmsRole} // ✅ Mostrar botón "+" solo para TMS
       />

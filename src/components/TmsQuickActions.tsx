@@ -37,17 +37,19 @@ export const TmsQuickActions = ({
   const isComercial = currentRole === "tms:comercial";
   const shouldHideOriginalActions = isLogistica || isDisenoDev || isPostcurso || isComercial;
   
-  console.log('[TmsQuickActions DEBUG] Renderizando con:', {
-    currentRole,
-    isLogistica,
-    isDisenoDev,
-    isPostcurso,
-    isComercial,
-    shouldHideOriginalActions,
-    hasAdditionalActionSend: !!onAdditionalActionSend,
-    disabled,
-    isMobile
-  });
+  if (import.meta.env.DEV) {
+    console.log('[TmsQuickActions DEBUG] Renderizando con:', {
+      currentRole,
+      isLogistica,
+      isDisenoDev,
+      isPostcurso,
+      isComercial,
+      shouldHideOriginalActions,
+      hasAdditionalActionSend: !!onAdditionalActionSend,
+      disabled,
+      isMobile
+    });
+  }
   
   const actions = [
     {
