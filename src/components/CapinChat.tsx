@@ -98,8 +98,9 @@ interface CapinChatProps {
 const sendTelemetry = (event: string, data?: Record<string, unknown>) => {
   try {
     // Solo enviar si hay endpoint de telemetría disponible
+    const telemetryEndpoint = import.meta.env.VITE_TELEMETRY_ENDPOINT || "/api/telemetry";
     if (typeof window !== 'undefined' && window.fetch) {
-      window.fetch("/api/telemetry", {
+      window.fetch(telemetryEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ event, timestamp: new Date().toISOString(), ...data }),
@@ -217,8 +218,16 @@ export const CapinChat = ({
 
   const activeRequestRef = useRef<AbortController | null>(null);
 
+  // Obtener endpoint de cancelación desde variables de entorno o construirlo
+  const cancelEndpoint = import.meta.env.VITE_CANCEL_ENDPOINT || apiEndpoint.replace(/\/chat$/, '/chat/cancel');
+
   const buildCancelEndpoint = (endpoint: string, currentSessionId?: string) => {
     if (!currentSessionId) return null;
+    // Si hay un endpoint de cancelación configurado, usarlo directamente
+    if (cancelEndpoint && !cancelEndpoint.includes('undefined')) {
+      return `${cancelEndpoint}/${currentSessionId}`;
+    }
+    // Fallback al comportamiento anterior
     const trimmed = endpoint.replace(/\/+$/, "");
     const cancelPath = `/api/chat/cancel/${currentSessionId}`;
     if (/\/api\/chat$/.test(trimmed)) {
